@@ -1,0 +1,13 @@
+RewriteEngine On
+
+RewriteRule ^publisher-notification-sw\.js$ publisher-notification-sw.js [L]
+
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+RewriteCond %{REQUEST_URI} !^/share/
+RewriteCond %{REQUEST_URI} !^/api/
+RewriteCond %{REQUEST_URI} !^/assets/
+RewriteCond %{REQUEST_URI} !^/icons/
+RewriteRule ^([A-Za-z0-9-]+)/?$ index.html [L]

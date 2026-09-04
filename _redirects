@@ -1,0 +1,4 @@
+/share/* /share/:splat 200
+/api/* /api/:splat 200
+/publisher-notification-sw.js /publisher-notification-sw.js 200
+/* /index.html 200

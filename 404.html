@@ -1,0 +1,855 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#ec2b93" />
+    <title>MyAlert Updates</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #17101b;
+        --muted: #776b7a;
+        --line: #eadde6;
+        --soft: #fff5fa;
+        --pink: #ec2b93;
+        --violet: #6c3cff;
+        --green: #138a58;
+        --shadow: 0 24px 80px rgba(171, 43, 124, 0.18);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 15% 10%, rgba(236, 43, 147, 0.14), transparent 34%),
+          radial-gradient(circle at 88% 18%, rgba(108, 60, 255, 0.12), transparent 30%),
+          linear-gradient(180deg, #fff7fb 0%, #ffffff 46%, #fffafd 100%);
+      }
+
+      button,
+      input {
+        font: inherit;
+      }
+
+      .top-strip {
+        background: #17101b;
+        color: #fff;
+        font-size: 14px;
+        font-weight: 800;
+        letter-spacing: 0;
+        text-align: center;
+        padding: 12px 16px;
+      }
+
+      .top-strip span {
+        color: #ff8cc8;
+      }
+
+      .shell {
+        width: min(1120px, calc(100% - 36px));
+        margin: 0 auto;
+      }
+
+      .nav {
+        min-height: 92px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        text-decoration: none;
+        color: inherit;
+      }
+
+      .brand-mark {
+        width: 46px;
+        height: 46px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        color: #fff;
+        font-size: 28px;
+        font-weight: 900;
+        background: linear-gradient(135deg, var(--pink), var(--violet));
+        box-shadow: 0 14px 34px rgba(236, 43, 147, 0.28);
+      }
+
+      .brand-name {
+        display: block;
+        font-size: 20px;
+        font-weight: 900;
+        line-height: 1;
+      }
+
+      .brand-subtitle {
+        display: block;
+        margin-top: 6px;
+        color: #8b7f8d;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+      }
+
+      .home-link {
+        min-height: 48px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 20px;
+        color: #211825;
+        text-decoration: none;
+        font-size: 15px;
+        font-weight: 800;
+        background: rgba(255, 255, 255, 0.82);
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+        gap: 42px;
+        align-items: center;
+        min-height: calc(100vh - 142px);
+        padding: 42px 0 54px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        gap: 10px;
+        align-items: center;
+        min-height: 32px;
+        border-radius: 999px;
+        padding: 6px 12px;
+        color: var(--pink);
+        background: rgba(236, 43, 147, 0.08);
+        font-size: 13px;
+        font-weight: 900;
+      }
+
+      h1 {
+        margin: 22px 0 16px;
+        max-width: 820px;
+        font-size: clamp(46px, 7.4vw, 94px);
+        line-height: 0.94;
+        letter-spacing: 0;
+        font-weight: 900;
+      }
+
+      .gradient-text {
+        background: linear-gradient(90deg, var(--pink), var(--violet));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+
+      .lead {
+        margin: 0;
+        max-width: 640px;
+        color: var(--muted);
+        font-size: clamp(18px, 2vw, 23px);
+        line-height: 1.45;
+        font-weight: 600;
+      }
+
+      .partner-line {
+        margin-top: 24px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        color: #4b404f;
+        font-weight: 800;
+      }
+
+      .avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        object-fit: cover;
+        background: linear-gradient(135deg, #ffe2f1, #eee7ff);
+        border: 1px solid rgba(236, 43, 147, 0.14);
+      }
+
+      .panel {
+        border: 1px solid rgba(236, 43, 147, 0.16);
+        border-radius: 28px;
+        padding: 24px;
+        background: rgba(255, 255, 255, 0.9);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(16px);
+      }
+
+      .panel-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 18px;
+      }
+
+      .panel-title {
+        margin: 0 0 6px;
+        font-size: 23px;
+        line-height: 1.15;
+        font-weight: 900;
+      }
+
+      .panel-copy {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.45;
+        font-weight: 600;
+      }
+
+      .badge {
+        flex: 0 0 auto;
+        border-radius: 999px;
+        padding: 7px 10px;
+        color: #8a1760;
+        background: #fff0f8;
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .topics {
+        display: grid;
+        gap: 12px;
+        margin: 20px 0;
+      }
+
+      .topic {
+        position: relative;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 14px;
+        align-items: center;
+        min-height: 92px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 16px;
+        background: #fff;
+        cursor: pointer;
+      }
+
+      .topic input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .topic-name {
+        margin: 0 0 6px;
+        font-size: 16px;
+        line-height: 1.25;
+        font-weight: 900;
+      }
+
+      .topic-detail {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.4;
+        font-weight: 600;
+      }
+
+      .switch {
+        width: 54px;
+        height: 32px;
+        border-radius: 999px;
+        padding: 4px;
+        background: #efe5ec;
+        transition: background 180ms ease;
+      }
+
+      .switch::before {
+        content: "";
+        display: block;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 4px 14px rgba(23, 16, 27, 0.16);
+        transition: transform 180ms ease;
+      }
+
+      .topic:has(input:checked) {
+        border-color: rgba(236, 43, 147, 0.42);
+        background: linear-gradient(180deg, #fff, #fff6fb);
+      }
+
+      .topic:has(input:checked) .switch {
+        background: linear-gradient(135deg, var(--pink), var(--violet));
+      }
+
+      .topic:has(input:checked) .switch::before {
+        transform: translateX(22px);
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin: 18px 0;
+      }
+
+      .input {
+        width: 100%;
+        min-height: 48px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 0 14px;
+        color: var(--ink);
+        background: #fff;
+        outline: none;
+        font-weight: 700;
+      }
+
+      .input:focus {
+        border-color: rgba(236, 43, 147, 0.62);
+        box-shadow: 0 0 0 4px rgba(236, 43, 147, 0.1);
+      }
+
+      .actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .primary,
+      .secondary {
+        min-height: 54px;
+        border-radius: 999px;
+        padding: 0 22px;
+        border: 0;
+        cursor: pointer;
+        font-weight: 900;
+      }
+
+      .primary {
+        color: #fff;
+        background: linear-gradient(135deg, var(--pink), var(--violet));
+        box-shadow: 0 18px 34px rgba(236, 43, 147, 0.24);
+      }
+
+      .primary:disabled {
+        cursor: not-allowed;
+        opacity: 0.58;
+        box-shadow: none;
+      }
+
+      .secondary {
+        color: #251929;
+        border: 1px solid var(--line);
+        background: #fff;
+      }
+
+      .status {
+        margin-top: 16px;
+        min-height: 44px;
+        border-radius: 15px;
+        padding: 12px 14px;
+        color: #5c4d61;
+        background: #fff7fb;
+        font-size: 13px;
+        line-height: 1.4;
+        font-weight: 700;
+      }
+
+      .status.ok {
+        color: var(--green);
+        background: #effbf6;
+      }
+
+      .status.error {
+        color: #a11248;
+        background: #fff1f6;
+      }
+
+      .skeleton {
+        overflow: hidden;
+        position: relative;
+        min-height: 94px;
+        border-radius: 18px;
+        background: #fff3f9;
+      }
+
+      .skeleton::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        transform: translateX(-100%);
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.78), transparent);
+        animation: shimmer 1.2s infinite;
+      }
+
+      @keyframes shimmer {
+        to {
+          transform: translateX(100%);
+        }
+      }
+
+      @media (max-width: 840px) {
+        .shell {
+          width: min(100% - 28px, 640px);
+        }
+
+        .nav {
+          min-height: 78px;
+        }
+
+        .home-link {
+          display: none;
+        }
+
+        .hero {
+          grid-template-columns: 1fr;
+          min-height: auto;
+          padding: 34px 0 42px;
+          gap: 28px;
+        }
+
+        h1 {
+          font-size: clamp(42px, 15vw, 68px);
+        }
+
+        .panel {
+          border-radius: 22px;
+          padding: 18px;
+        }
+
+        .form-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .primary,
+        .secondary {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="top-strip">
+      Browser notifications for local business. <span>No charges. Always FREE!!!</span>
+    </div>
+
+    <main class="shell">
+      <nav class="nav" aria-label="Primary">
+        <a class="brand" href="/" aria-label="MyAlert home">
+          <span class="brand-mark">M</span>
+          <span>
+            <span class="brand-name">MyAlert</span>
+            <span class="brand-subtitle">BROWSER ALERTS, ALWAYS FREE</span>
+          </span>
+        </a>
+        <a class="home-link" href="/">Explore nearby</a>
+      </nav>
+
+      <section class="hero">
+        <div>
+          <div class="eyebrow" id="pageEyebrow">Browser notifications</div>
+          <h1>
+            Get updates from
+            <span class="gradient-text" id="heroPartnerName">this store.</span>
+          </h1>
+          <p class="lead" id="heroCopy">
+            Choose what you want to hear about and allow notifications in your browser.
+          </p>
+          <div class="partner-line" id="partnerLine" hidden>
+            <img class="avatar" id="partnerImage" alt="" />
+            <span id="partnerMeta"></span>
+          </div>
+        </div>
+
+        <section class="panel" aria-labelledby="topicsTitle">
+          <div class="panel-head">
+            <div>
+              <h2 class="panel-title" id="topicsTitle">Notification topics</h2>
+              <p class="panel-copy" id="topicsCopy">Loading available topics...</p>
+            </div>
+            <span class="badge" id="topicCount">0 topics</span>
+          </div>
+
+          <div class="topics" id="topics">
+            <div class="skeleton"></div>
+            <div class="skeleton"></div>
+          </div>
+
+          <div class="form-grid">
+            <input class="input" id="displayName" autocomplete="name" placeholder="Your name, optional" />
+            <input class="input" id="city" autocomplete="address-level2" placeholder="City, optional" />
+          </div>
+
+          <div class="actions">
+            <button class="primary" id="saveButton" type="button" disabled>Enable updates</button>
+            <button class="secondary" id="clearButton" type="button" disabled>Turn off</button>
+          </div>
+
+          <div class="status" id="status" role="status">
+            Open this page in Chrome, Edge, or another browser that supports web push.
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script>
+      const API_BASE_URL = "https://api.traeto.in";
+      const RESERVED_PATHS = new Set([
+        "",
+        "about",
+        "contact",
+        "home",
+        "plans",
+        "privacy",
+        "share",
+        "support",
+        "terms",
+      ]);
+
+      const state = {
+        slug: "",
+        partner: null,
+        topics: [],
+        publicKey: "",
+        existingSubscription: null,
+        busy: false,
+      };
+
+      const $ = (id) => document.getElementById(id);
+
+      function setStatus(message, type = "") {
+        const status = $("status");
+        status.textContent = message;
+        status.className = `status ${type}`.trim();
+      }
+
+      function browserSupportMessage() {
+        const ua = navigator.userAgent || "";
+        const isAppleMobile = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+        const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+        if (isAppleMobile && !isStandalone) {
+          return "On iPhone or iPad, open this page in Safari, add it to Home Screen, then open it from the Home Screen icon to enable notifications.";
+        }
+        if (Notification.permission === "denied") {
+          return "Notifications are blocked for this site. Open browser site settings for myalert.in and allow notifications.";
+        }
+        return "This browser does not support web push notifications. Use Chrome, Edge, or Safari with the page installed to Home Screen on iPhone.";
+      }
+
+      function blockedRecoveryMessage() {
+        const ua = navigator.userAgent || "";
+        if (/Chrome|CriOS|Edg/.test(ua)) {
+          return "Notifications are blocked. Tap the site icon near the address bar, open Site settings, set Notifications to Allow, then return here.";
+        }
+        return "Notifications are blocked for this site. Open browser site settings for myalert.in and allow notifications, then return here.";
+      }
+
+      function rememberPermissionOutcome(outcome) {
+        try {
+          window.localStorage.setItem(
+            `myalert.notificationPermission.${state.slug || "site"}`,
+            JSON.stringify({ outcome, at: Date.now() })
+          );
+        } catch (_) {}
+      }
+
+      function lastDeniedRecently() {
+        if ("Notification" in window && Notification.permission === "granted") {
+          return false;
+        }
+        try {
+          const raw = window.localStorage.getItem(`myalert.notificationPermission.${state.slug || "site"}`);
+          if (!raw) return false;
+          const parsed = JSON.parse(raw);
+          return parsed.outcome !== "granted" && Date.now() - Number(parsed.at || 0) < 24 * 60 * 60 * 1000;
+        } catch (_) {
+          return false;
+        }
+      }
+
+      function updateActionState() {
+        const hasTopic = selectedTopicIds().length > 0;
+        const canUsePush = !!state.publicKey && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+        $("saveButton").disabled = state.busy || !hasTopic || !canUsePush || Notification.permission === "denied" || lastDeniedRecently();
+        $("clearButton").disabled = state.busy || !state.topics.length;
+      }
+
+      function currentSlug() {
+        const params = new URLSearchParams(window.location.search);
+        const querySlug = (
+          params.get("partner") ||
+          params.get("slug") ||
+          params.get("publisher") ||
+          ""
+        ).trim().toLowerCase();
+        if (querySlug && !RESERVED_PATHS.has(querySlug)) {
+          return querySlug;
+        }
+        const segments = window.location.pathname.split("/").map((item) => decodeURIComponent(item).trim()).filter(Boolean);
+        const slug = (segments[0] || "").toLowerCase();
+        return RESERVED_PATHS.has(slug) ? "" : slug;
+      }
+
+      function imageUrl(storeImage) {
+        const rawUrl = storeImage && typeof storeImage.url === "string" ? storeImage.url.trim() : "";
+        if (rawUrl) return rawUrl;
+        const relativePath = storeImage && typeof storeImage.relativePath === "string" ? storeImage.relativePath.trim() : "";
+        if (!relativePath) return "";
+        if (relativePath.startsWith("store-images/")) {
+          return `https://traeto-pull.b-cdn.net/${relativePath}`;
+        }
+        return `${API_BASE_URL}/media/store-images/${relativePath.replace(/^\/+/, "")}`;
+      }
+
+      function urlBase64ToUint8Array(base64String) {
+        const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+        const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+        for (let index = 0; index < rawData.length; index += 1) {
+          outputArray[index] = rawData.charCodeAt(index);
+        }
+        return outputArray;
+      }
+
+      async function apiJson(url, options = {}) {
+        const response = await fetch(url, {
+          ...options,
+          headers: {
+            "Content-Type": "application/json",
+            ...(options.headers || {}),
+          },
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || payload.success === false) {
+          throw new Error(payload.message || "Request failed. Please try again.");
+        }
+        return payload;
+      }
+
+      function selectedTopicIds() {
+        return Array.from(document.querySelectorAll("input[name='topic']:checked")).map((input) => input.value);
+      }
+
+      function renderPartner() {
+        const partner = state.partner;
+        const name = partner.vendorName || partner.username || "this store";
+        const businessType = partner.businessType || "Local business";
+        const city = Array.isArray(partner.postingCities) && partner.postingCities.length
+          ? [partner.postingCities[0].name, partner.postingCities[0].state].filter(Boolean).join(", ")
+          : partner.storeAddress || "";
+        $("heroPartnerName").textContent = name;
+        $("pageEyebrow").textContent = `${businessType} updates`;
+        $("heroCopy").textContent = `Follow ${name} on MyAlert and get useful updates directly in your browser. No charges. Always free.`;
+        $("partnerMeta").textContent = [businessType, city].filter(Boolean).join(" • ");
+        const img = imageUrl(partner.storeImage);
+        if (img) {
+          $("partnerImage").src = img;
+          $("partnerLine").hidden = false;
+        }
+      }
+
+      function renderTopics() {
+        const container = $("topics");
+        container.innerHTML = "";
+        $("topicCount").textContent = `${state.topics.length} ${state.topics.length === 1 ? "topic" : "topics"}`;
+
+        if (!state.topics.length) {
+          container.innerHTML = "<p class='panel-copy'>No public topics are available yet.</p>";
+          $("saveButton").disabled = true;
+          $("clearButton").disabled = true;
+          $("topicsCopy").textContent = "This publisher has not opened notification topics yet.";
+          return;
+        }
+
+        $("topicsCopy").textContent = "Select the updates you want to receive.";
+        for (const topic of state.topics) {
+          const label = document.createElement("label");
+          label.className = "topic";
+          label.innerHTML = `
+            <span>
+              <input name="topic" type="checkbox" value="${topic.id}" checked />
+              <span class="topic-name">${escapeHtml(topic.title || "Untitled topic")}</span>
+              <span class="topic-detail">${escapeHtml(topic.description || topic.category || "Publisher update")}</span>
+            </span>
+            <span class="switch" aria-hidden="true"></span>
+          `;
+          label.querySelector("input").addEventListener("change", () => {
+            updateActionState();
+            if (selectedTopicIds().length === 0) {
+              setStatus("Select at least one topic before enabling updates.", "error");
+            } else if (
+              state.publicKey &&
+              "Notification" in window &&
+              Notification.permission !== "denied" &&
+              !lastDeniedRecently()
+            ) {
+              setStatus("Tap Enable updates when you are ready. The browser permission prompt will open only after that tap.");
+            }
+          });
+          container.appendChild(label);
+        }
+
+        updateActionState();
+      }
+
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, (char) => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        }[char]));
+      }
+
+      async function loadPartner() {
+        state.slug = currentSlug();
+        if (!state.slug) {
+          setStatus("Partner link is missing. Open the link shared by the business.", "error");
+          $("topics").innerHTML = "";
+          return;
+        }
+
+        try {
+          const payload = await apiJson(`${API_BASE_URL}/api/publisher-notifications/public/partners/${encodeURIComponent(state.slug)}`);
+          state.partner = payload.partner;
+          state.topics = Array.isArray(payload.topics) ? payload.topics : [];
+          state.publicKey = payload.webPush && payload.webPush.enabled ? payload.webPush.publicKey : "";
+          renderPartner();
+          renderTopics();
+          if (!state.publicKey) {
+            setStatus("Notifications are not active for this publisher yet. Topics can be viewed, but browser alerts cannot be enabled.", "error");
+          } else if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+            setStatus(browserSupportMessage(), "error");
+          } else if (Notification.permission === "denied") {
+            setStatus(blockedRecoveryMessage(), "error");
+          } else if (lastDeniedRecently()) {
+            setStatus("Notifications were not allowed recently. To avoid browser auto-blocking, enable permission from site settings before trying again.", "error");
+            updateActionState();
+          } else {
+            setStatus("Choose topics, then tap Enable updates. The browser permission prompt opens only after your tap.");
+          }
+        } catch (error) {
+          $("topics").innerHTML = "";
+          setStatus(error.message || "Could not load this publisher page.", "error");
+        }
+      }
+
+      async function getPushSubscription() {
+        if (!state.publicKey) {
+          throw new Error("Notifications are not configured for this publisher yet.");
+        }
+        if (Notification.permission === "denied") {
+          rememberPermissionOutcome("denied");
+          throw new Error(blockedRecoveryMessage());
+        }
+        if (lastDeniedRecently()) {
+          throw new Error("Notifications were not allowed recently. Enable notifications from browser site settings to continue.");
+        }
+        const permission = Notification.permission === "granted"
+          ? "granted"
+          : await Notification.requestPermission();
+        if (permission !== "granted") {
+          rememberPermissionOutcome(permission || "dismissed");
+          throw new Error("Notification permission was not granted. To avoid browser auto-blocking, this page will not ask again for a while.");
+        }
+        rememberPermissionOutcome("granted");
+
+        const registration = await navigator.serviceWorker.register("/publisher-notification-sw.js");
+        await navigator.serviceWorker.ready;
+        const existing = await registration.pushManager.getSubscription();
+        if (existing) return existing;
+        return registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(state.publicKey),
+        });
+      }
+
+      async function saveSubscription() {
+        const topicIds = selectedTopicIds();
+        if (!topicIds.length) {
+          setStatus("Select at least one topic to enable updates.", "error");
+          updateActionState();
+          return;
+        }
+        state.busy = true;
+        updateActionState();
+        setStatus("Saving your choices. If permission is needed, your browser will ask now.");
+        try {
+          const subscription = await getPushSubscription();
+          state.existingSubscription = subscription;
+          await apiJson(`${API_BASE_URL}/api/publisher-notifications/public/subscriptions`, {
+            method: "POST",
+            body: JSON.stringify({
+              vendorId: state.slug,
+              topicIds,
+              replaceTopics: true,
+              displayName: $("displayName").value,
+              city: $("city").value,
+              source: "website",
+              browserPush: subscription.toJSON(),
+            }),
+          });
+          setStatus("Done. You will receive updates for the selected topics.", "ok");
+        } catch (error) {
+          setStatus(error.message || "Could not save notification settings.", "error");
+        } finally {
+          state.busy = false;
+          updateActionState();
+        }
+      }
+
+      async function turnOff() {
+        state.busy = true;
+        updateActionState();
+        setStatus("Turning off browser notifications for this publisher...");
+        try {
+          const registration = await navigator.serviceWorker.getRegistration("/");
+          const subscription = registration ? await registration.pushManager.getSubscription() : null;
+          if (subscription) {
+            await apiJson(`${API_BASE_URL}/api/publisher-notifications/public/subscriptions`, {
+              method: "DELETE",
+              body: JSON.stringify({ browserPush: subscription.toJSON() }),
+            });
+            await subscription.unsubscribe();
+          }
+          document.querySelectorAll("input[name='topic']").forEach((input) => {
+            input.checked = false;
+          });
+          setStatus("Notifications are turned off for this browser.", "ok");
+        } catch (error) {
+          setStatus(error.message || "Could not turn off notifications.", "error");
+        } finally {
+          state.busy = false;
+          updateActionState();
+        }
+      }
+
+      $("saveButton").addEventListener("click", saveSubscription);
+      $("clearButton").addEventListener("click", turnOff);
+      loadPartner();
+    </script>
+  </body>
+</html>

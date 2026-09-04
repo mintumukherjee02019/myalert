@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/publisher-notification-sw.js",
+      "destination": "/publisher-notification-sw.js"
+    },
+    {
+      "source": "/:slug((?!share|api|assets|icons|favicon\\.png|manifest\\.json|publisher-notification-sw\\.js).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
