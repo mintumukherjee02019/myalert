@@ -7,6 +7,7 @@ Static browser notification opt-in page for Traeto publisher subscribers.
 - `https://myalert.in/?partner=traeto`
 - `https://myalert.in/traeto` when the host supports SPA rewrites
 - `https://myalert.in/publisher-notification-sw.js`
+- `https://myalert.in/site.webmanifest`
 
 The page reads partner/topic data from:
 

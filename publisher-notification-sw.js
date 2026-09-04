@@ -9,7 +9,7 @@ self.addEventListener("push", (event) => {
   const title = payload.title || "MyAlert update";
   const options = {
     body: payload.body || "You have a new update.",
-    icon: "/favicon.png",
+    icon: "/icons/icon-192.png",
     badge: "/favicon.png",
     data: {
       actionUrl: payload.actionUrl || "/view",

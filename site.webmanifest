@@ -1,0 +1,24 @@
+{
+  "name": "MyAlert",
+  "short_name": "MyAlert",
+  "description": "Browser notification opt-in for local business updates.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fff7fb",
+  "theme_color": "#ec2b93",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
