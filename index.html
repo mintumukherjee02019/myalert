@@ -744,7 +744,7 @@
         $("topicsCopy").textContent = "Enter the 4-character code shared by the publisher.";
         $("topics").innerHTML = `
           <div class="code-entry">
-            <input class="input" id="partnerCode" maxlength="4" autocomplete="off" inputmode="text" placeholder="A1B2" />
+            <input class="input" id="partnerCode" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" placeholder="A1B2" />
             <button class="primary" id="codeButton" type="button">Find publisher</button>
           </div>
         `;
