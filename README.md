@@ -11,6 +11,6 @@ Static browser notification opt-in page for Traeto publisher subscribers.
 
 The page reads partner/topic data from:
 
-`https://api.traeto.in/api/publisher-notifications/public/partners/{slug}`
+`https://api.traeto.in/api/myalert-publisher-notifications/public/partners/{slug}`
 
 The service worker must stay at the site root so browser push can use root scope.
