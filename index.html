@@ -5,9 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#ec2b93" />
     <title>MyAlert Updates</title>
-    <link rel="icon" href="/favicon.png" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <link rel="manifest" href="/site.webmanifest" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -315,6 +312,20 @@
         margin: 18px 0;
       }
 
+      .code-entry {
+        display: grid;
+        gap: 12px;
+        margin: 20px 0;
+      }
+
+      .code-entry .input {
+        text-transform: uppercase;
+        text-align: center;
+        font-size: 28px;
+        font-weight: 900;
+        letter-spacing: 0.18em;
+      }
+
       .input {
         width: 100%;
         min-height: 48px;
@@ -598,8 +609,12 @@
         $("clearButton").disabled = state.busy || !state.topics.length;
       }
 
-      function currentSlug() {
+      function currentIdentifier() {
         const params = new URLSearchParams(window.location.search);
+        const queryCode = (params.get("code") || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+        if (/^[A-Z0-9]{4}$/.test(queryCode)) {
+          return queryCode;
+        }
         const querySlug = (
           params.get("partner") ||
           params.get("slug") ||
@@ -717,6 +732,43 @@
         updateActionState();
       }
 
+      function renderCodeEntry() {
+        state.partner = null;
+        state.topics = [];
+        state.publicKey = "";
+        $("heroPartnerName").textContent = "MyAlert.";
+        $("pageEyebrow").textContent = "One app, many publishers";
+        $("heroCopy").textContent = "Install MyAlert once, enter a publisher code, choose topics, and receive browser notifications.";
+        $("partnerLine").hidden = true;
+        $("topicCount").textContent = "Code";
+        $("topicsCopy").textContent = "Enter the 4-character code shared by the publisher.";
+        $("topics").innerHTML = `
+          <div class="code-entry">
+            <input class="input" id="partnerCode" maxlength="4" autocomplete="off" inputmode="text" placeholder="A1B2" />
+            <button class="primary" id="codeButton" type="button">Find publisher</button>
+          </div>
+        `;
+        $("saveButton").disabled = true;
+        $("clearButton").disabled = true;
+        setStatus("On iPhone, add this page to Home Screen first, then open MyAlert and enter the publisher code.");
+        const codeInput = $("partnerCode");
+        const submitCode = () => {
+          const code = codeInput.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+          if (!/^[A-Z0-9]{4}$/.test(code)) {
+            setStatus("Enter the 4-character publisher code.", "error");
+            return;
+          }
+          window.location.href = `/?code=${encodeURIComponent(code)}`;
+        };
+        codeInput.addEventListener("input", () => {
+          codeInput.value = codeInput.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4);
+        });
+        codeInput.addEventListener("keydown", (event) => {
+          if (event.key === "Enter") submitCode();
+        });
+        $("codeButton").addEventListener("click", submitCode);
+      }
+
       function escapeHtml(value) {
         return String(value).replace(/[&<>"']/g, (char) => ({
           "&": "&amp;",
@@ -728,10 +780,9 @@
       }
 
       async function loadPartner() {
-        state.slug = currentSlug();
+        state.slug = currentIdentifier();
         if (!state.slug) {
-          setStatus("Partner link is missing. Open the link shared by the business.", "error");
-          $("topics").innerHTML = "";
+          renderCodeEntry();
           return;
         }
 
