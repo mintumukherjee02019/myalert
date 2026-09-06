@@ -272,6 +272,36 @@
         font-weight: 600;
       }
 
+      .topic-private {
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        margin-top: 8px;
+        border-radius: 999px;
+        padding: 5px 9px;
+        color: #9b1458;
+        background: #fff0f8;
+        font-size: 11px;
+        font-weight: 900;
+      }
+
+      .passcode-row {
+        grid-column: 1 / -1;
+        display: none;
+        gap: 8px;
+        align-items: center;
+        margin-top: -4px;
+      }
+
+      .topic:has(input:checked) .passcode-row {
+        display: grid;
+      }
+
+      .passcode-input {
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+      }
+
       .switch {
         width: 54px;
         height: 32px;
@@ -605,7 +635,7 @@
       function updateActionState() {
         const hasTopic = selectedTopicIds().length > 0;
         const canUsePush = !!state.publicKey && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
-        $("saveButton").disabled = state.busy || !hasTopic || !canUsePush || Notification.permission === "denied" || lastDeniedRecently();
+        $("saveButton").disabled = state.busy || !hasTopic || !canUsePush || !selectedPrivatePasscodesReady() || Notification.permission === "denied" || lastDeniedRecently();
         $("clearButton").disabled = state.busy || !state.topics.length;
       }
 
@@ -670,6 +700,28 @@
         return Array.from(document.querySelectorAll("input[name='topic']:checked")).map((input) => input.value);
       }
 
+      function privateTopicsById() {
+        return new Map(state.topics.filter((topic) => topic.isPrivate === true).map((topic) => [topic.id, topic]));
+      }
+
+      function selectedPrivateTopics() {
+        const privateMap = privateTopicsById();
+        return selectedTopicIds().map((id) => privateMap.get(id)).filter(Boolean);
+      }
+
+      function topicPasscodes() {
+        const passcodes = {};
+        for (const topic of selectedPrivateTopics()) {
+          const input = document.querySelector(`[data-passcode-for="${topic.id}"]`);
+          passcodes[topic.id] = (input ? input.value : "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 5);
+        }
+        return passcodes;
+      }
+
+      function selectedPrivatePasscodesReady() {
+        return selectedPrivateTopics().every((topic) => /^[A-Z0-9]{5}$/.test(topicPasscodes()[topic.id] || ""));
+      }
+
       function renderPartner() {
         const partner = state.partner;
         const name = partner.vendorName || partner.username || "this store";
@@ -705,18 +757,27 @@
         for (const topic of state.topics) {
           const label = document.createElement("label");
           label.className = "topic";
+          const isPrivate = topic.isPrivate === true;
           label.innerHTML = `
             <span>
               <input name="topic" type="checkbox" value="${topic.id}" checked />
               <span class="topic-name">${escapeHtml(topic.title || "Untitled topic")}</span>
               <span class="topic-detail">${escapeHtml(topic.description || topic.category || "Publisher update")}</span>
+              ${isPrivate ? "<span class=\"topic-private\">Private topic - passcode required</span>" : ""}
             </span>
             <span class="switch" aria-hidden="true"></span>
+            ${isPrivate ? `
+              <span class="passcode-row">
+                <input class="input passcode-input" data-passcode-for="${escapeHtml(topic.id)}" maxlength="5" autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" placeholder="PASSCODE" />
+              </span>
+            ` : ""}
           `;
           label.querySelector("input").addEventListener("change", () => {
             updateActionState();
             if (selectedTopicIds().length === 0) {
               setStatus("Select at least one topic before enabling updates.", "error");
+            } else if (!selectedPrivatePasscodesReady()) {
+              setStatus("Enter the 5-character passcode for each selected private topic.", "error");
             } else if (
               state.publicKey &&
               "Notification" in window &&
@@ -725,6 +786,17 @@
             ) {
               setStatus("Tap Enable updates when you are ready. The browser permission prompt will open only after that tap.");
             }
+          });
+          label.querySelectorAll("[data-passcode-for]").forEach((input) => {
+            input.addEventListener("input", () => {
+              input.value = input.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 5);
+              updateActionState();
+              if (selectedPrivatePasscodesReady()) {
+                setStatus("Private passcode ready. Tap Enable updates to verify and continue.");
+              } else {
+                setStatus("Enter the 5-character passcode for each selected private topic.", "error");
+              }
+            });
           });
           container.appendChild(label);
         }
@@ -803,7 +875,12 @@
             setStatus("Notifications were not allowed recently. To avoid browser auto-blocking, enable permission from site settings before trying again.", "error");
             updateActionState();
           } else {
-            setStatus("Choose topics, then tap Enable updates. The browser permission prompt opens only after your tap.");
+            const hasPrivateTopic = state.topics.some((topic) => topic.isPrivate === true);
+            setStatus(
+              hasPrivateTopic
+                ? "Choose topics, enter private passcodes where required, then tap Enable updates."
+                : "Choose topics, then tap Enable updates. The browser permission prompt opens only after your tap."
+            );
           }
         } catch (error) {
           $("topics").innerHTML = "";
@@ -841,6 +918,23 @@
         });
       }
 
+      async function verifyPrivateTopics(topicIds) {
+        if (!selectedPrivateTopics().length) {
+          return;
+        }
+        if (!selectedPrivatePasscodesReady()) {
+          throw new Error("Enter the 5-character passcode for each selected private topic.");
+        }
+        await apiJson(`${API_BASE_URL}/api/myalert-publisher-notifications/public/topics/verify-passcodes`, {
+          method: "POST",
+          body: JSON.stringify({
+            vendorId: state.slug,
+            topicIds,
+            topicPasscodes: topicPasscodes(),
+          }),
+        });
+      }
+
       async function saveSubscription() {
         const topicIds = selectedTopicIds();
         if (!topicIds.length) {
@@ -850,8 +944,14 @@
         }
         state.busy = true;
         updateActionState();
-        setStatus("Saving your choices. If permission is needed, your browser will ask now.");
+        setStatus("Checking selected topics before the browser permission prompt.");
         try {
+          await verifyPrivateTopics(topicIds);
+          if (selectedPrivateTopics().length) {
+            setStatus("Private topic verified. Your browser permission prompt will open now.");
+          } else {
+            setStatus("Saving your choices. If permission is needed, your browser will ask now.");
+          }
           const subscription = await getPushSubscription();
           state.existingSubscription = subscription;
           await apiJson(`${API_BASE_URL}/api/myalert-publisher-notifications/public/subscriptions`, {
@@ -859,6 +959,7 @@
             body: JSON.stringify({
               vendorId: state.slug,
               topicIds,
+              topicPasscodes: topicPasscodes(),
               replaceTopics: true,
               displayName: $("displayName").value,
               city: $("city").value,
