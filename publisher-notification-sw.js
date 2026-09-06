@@ -11,6 +11,7 @@ self.addEventListener("push", (event) => {
     body: payload.body || "You have a new update.",
     icon: "/icons/icon-192.png",
     badge: "/favicon.png",
+    image: payload.imageUrl || undefined,
     data: {
       actionUrl: payload.actionUrl || "/view",
       updateId: payload.updateId || "",
