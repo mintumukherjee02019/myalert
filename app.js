@@ -537,7 +537,6 @@ function publisherCard(publisher) {
         ${more > 0 ? `<span class="pill">+${more} more</span>` : ""}
       </div>
       <div class="publisher-foot">
-        <strong>${escapeHtml(publisher.subscribers)} subscribers</strong>
         <a class="secondary-btn" href="/p/${encodeURIComponent(
           publisher.slug
         )}" data-link data-focus-alerts>View Alerts ${icons.chevron}</a>
@@ -699,7 +698,6 @@ function normalizePublisher(raw = {}) {
       "Important updates, alerts and announcements from this publisher.",
     logoUrl: raw.logoUrl || raw.storeImage?.url || "",
     verified: raw.verified !== false,
-    subscribers: raw.subscribers || raw.subscriberCount || "0",
     topics: topicLabels,
   };
 }
