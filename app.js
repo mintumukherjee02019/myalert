@@ -811,9 +811,13 @@ function whatsappCard(canContinue, publisherName) {
               <strong>${verified ? "Number verified" : "Verify WhatsApp number"}</strong>
               <p>${verified ? "You can submit your alert preferences now." : "We will send a 4 digit OTP to this WhatsApp number."}</p>
             </div>
-            <button class="secondary-btn otp-btn" type="button" data-request-wa-otp ${state.whatsappOtpBusy || cooldown > 0 || verified ? "disabled" : ""}>
-              ${cooldown > 0 ? `Resend in ${cooldown}s` : state.whatsappOtpSent ? "Resend OTP" : "Send OTP"}
-            </button>
+            ${
+              verified
+                ? `<span class="otp-verified-badge">${icons.check} Verified</span>`
+                : `<button class="secondary-btn otp-btn" type="button" data-request-wa-otp ${state.whatsappOtpBusy || cooldown > 0 ? "disabled" : ""}>
+                    ${cooldown > 0 ? `Resend in ${cooldown}s` : state.whatsappOtpSent ? "Resend OTP" : "Send OTP"}
+                  </button>`
+            }
           </div>
           ${
             state.whatsappOtpSent && !verified
@@ -1114,6 +1118,9 @@ async function verifyWhatsAppOtp() {
       }),
     });
     state.whatsappVerifiedPhone = normalizePhone(state.whatsappPhone);
+    state.whatsappOtpCooldownUntil = 0;
+    window.clearInterval(otpCooldownTimer);
+    otpCooldownTimer = 0;
     state.whatsappOtpMessage = payload.message || "WhatsApp number verified.";
     toast("WhatsApp number verified.");
   } catch (error) {

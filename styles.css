@@ -897,7 +897,12 @@ a {
 .otp-panel-head,
 .otp-row {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 10px;
+}
+
+.otp-panel-head > div {
+  min-width: 0;
 }
 
 .otp-panel-head strong {
@@ -917,6 +922,25 @@ a {
 .otp-panel.verified .otp-panel-head strong,
 .otp-panel.verified .otp-message {
   color: #15803d;
+}
+
+.otp-verified-badge {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  color: #15803d;
+  background: #dcfce7;
+  border: 1px solid #bbf7d0;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.otp-verified-badge svg {
+  width: 14px;
+  height: 14px;
 }
 
 .otp-btn {
@@ -1354,6 +1378,10 @@ a {
   .otp-row {
     grid-template-columns: 1fr auto;
     align-items: center;
+  }
+
+  .otp-panel.verified .otp-panel-head {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .chips {
