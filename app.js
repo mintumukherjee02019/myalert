@@ -12,12 +12,14 @@ const state = {
   subscriptions: [],
   updates: [],
   publisher: null,
+  publisherIdentifier: "",
   topics: [],
   webPush: { enabled: false, publicKey: "" },
   selectedTopicIds: new Set(),
   topicPasscodes: {},
   browserEnabled: false,
   browserDenied: false,
+  publisherFocusPending: false,
   qrOpen: false,
   qrError: "",
   whatsappOpen: false,
@@ -405,6 +407,7 @@ function publisherCard(publisher) {
 async function fetchPublisher(identifier) {
   state.loading = true;
   state.error = "";
+  state.publisherIdentifier = identifier;
   render();
   try {
     const response = await fetch(
@@ -419,8 +422,14 @@ async function fetchPublisher(identifier) {
     state.publisher = normalizePublisher(payload.partner);
     state.topics = payload.topics || [];
     state.webPush = payload.webPush || { enabled: false, publicKey: "" };
-    state.selectedTopicIds = new Set();
+    state.selectedTopicIds = new Set(state.topics.map((topic) => topic.id));
     state.topicPasscodes = {};
+    state.whatsappOpen = true;
+    state.whatsappConsent = true;
+    const savedContact = getSavedContact();
+    state.whatsappName = savedContact.displayName || state.whatsappName;
+    state.whatsappPhone = savedContact.phoneNumber || state.whatsappPhone;
+    state.publisherFocusPending = true;
     await hydratePublisherSubscription();
   } catch (error) {
     state.error = error.message || "Publisher not found.";
@@ -443,12 +452,9 @@ async function hydratePublisherSubscription() {
     const payload = await fetchJson(url.toString());
     const subscription = payload.subscriptions?.[0];
     if (!subscription) return;
-    state.selectedTopicIds = new Set(
-      (subscription.topics || []).map((topic) => topic.id || topic.topicId).filter(Boolean)
-    );
     state.browserEnabled = subscription.hasBrowserPush === true;
-    state.whatsappOpen = subscription.whatsappOptIn?.enabled === true;
-    state.whatsappConsent = subscription.whatsappOptIn?.enabled === true;
+    state.whatsappOpen = true;
+    state.whatsappConsent = true;
     state.whatsappName = subscription.displayName || saved.displayName || "";
     state.whatsappPhone = subscription.phoneNumber || saved.phoneNumber || "";
   } catch (_) {
@@ -568,7 +574,15 @@ function currentPublisherIdentifier() {
 
 function publisherPage() {
   const identifier = currentPublisherIdentifier();
-  if (!state.publisher && !state.loading && !state.error) {
+  if (state.publisherIdentifier && state.publisherIdentifier !== identifier) {
+    state.publisher = null;
+    state.error = "";
+  }
+  if (
+    (!state.publisher || state.publisherIdentifier !== identifier) &&
+    !state.loading &&
+    !state.error
+  ) {
     setTimeout(() => fetchPublisher(identifier), 0);
   }
 
@@ -618,7 +632,6 @@ function publisherPage() {
                   <h2 class="section-title">Choose what you want to receive</h2>
                   <p class="section-subtitle">You can change these anytime.</p>
                 </div>
-                <button class="ghost-btn" data-select-all>Select all</button>
               </div>
               <div class="topics-list topic-grid">
                 ${
@@ -696,8 +709,8 @@ function browserCard(canContinue) {
           ? `<div class="warning-box">Notifications are blocked for MyAlert in your browser settings.</div>`
           : unsupported || (isIos && !standalone)
           ? `<div class="warning-box">Browser notifications need MyAlert installed to Home Screen on iPhone.</div>
-             <a class="secondary-btn" href="/install" data-link>Show iPhone Setup</a>`
-          : `<button class="primary-btn" data-enable-browser ${!canContinue ? "disabled" : ""}>Enable Browser Notifications</button>`
+             <a class="inline-link" href="/install" data-link>Show iPhone setup</a>`
+          : `<div class="success-box">${icons.check} Browser notifications will be enabled on submit</div>`
       }
     </article>
   `;
@@ -733,7 +746,6 @@ function whatsappCard(canContinue, publisherName) {
           )} for the topics I selected above.</span>
         </label>
         <p class="small-text">You can unsubscribe anytime. Your number is used to deliver the alerts you choose and manage your subscription.</p>
-        <button class="secondary-btn" data-save-whatsapp ${!canContinue ? "disabled" : ""}>Enable WhatsApp Alerts</button>
       </div>
     </article>
   `;
@@ -742,7 +754,11 @@ function whatsappCard(canContinue, publisherName) {
 function summaryCard(selectedTopics, canContinue) {
   const publisher = state.publisher || {};
   const delivery = [
-    state.browserEnabled ? "Browser Push" : "",
+    canUseBrowserNotifications()
+      ? state.browserEnabled
+        ? "Browser Push on"
+        : "Browser Push on submit"
+      : "",
     state.whatsappOpen ? "WhatsApp" : "",
   ].filter(Boolean);
   return `
@@ -753,43 +769,38 @@ function summaryCard(selectedTopics, canContinue) {
         <li><span>Topics</span><strong>${selectedTopics.length || 0}</strong></li>
         <li><span>Delivery</span><strong>${delivery.length ? delivery.join(", ") : "Choose method"}</strong></li>
       </ul>
-      <button class="primary-btn" data-save-preferences ${!canContinue ? "disabled" : ""}>Save Alert Preferences</button>
-      <p class="small-text">We ask for notification permission only after you tap enable.</p>
+      <button class="primary-btn submit-preferences-btn" data-save-preferences ${!canContinue ? "disabled" : ""}>Submit Alert Preferences</button>
+      <p class="small-text">This will save your WhatsApp consent and enable browser notifications where supported.</p>
     </article>
   `;
 }
 
-async function enableBrowserNotifications() {
-  if (!state.publisher) return;
-  if (state.selectedTopicIds.size === 0) {
-    toast("Select at least one topic.");
-    return;
-  }
-  if (!state.webPush.enabled || !state.webPush.publicKey) {
-    toast("Browser alerts are temporarily unavailable.");
-    return;
-  }
-  const privateOk = await verifyPrivatePasscodes();
-  if (!privateOk) return;
+function canUseBrowserNotifications() {
+  const unsupported = !("serviceWorker" in navigator) || !("PushManager" in window);
+  const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const standalone =
+    window.matchMedia("(display-mode: standalone)").matches ||
+    window.navigator.standalone === true;
+  return !unsupported && !(isIos && !standalone) && state.webPush.enabled && !!state.webPush.publicKey;
+}
+
+async function prepareBrowserSubscription() {
+  if (!canUseBrowserNotifications()) return null;
+  const existingRegistration =
+    (await navigator.serviceWorker.getRegistration()) ||
+    (await navigator.serviceWorker.register("/service-worker.js"));
+  const existingSubscription = await existingRegistration.pushManager.getSubscription();
+  if (existingSubscription) return existingSubscription;
   const permission = await Notification.requestPermission();
   if (permission === "denied") {
     state.browserDenied = true;
-    render();
-    return;
+    return null;
   }
-  if (permission !== "granted") return;
-  const registration = await navigator.serviceWorker.register("/service-worker.js");
-  const subscription =
-    (await registration.pushManager.getSubscription()) ||
-    (await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(state.webPush.publicKey),
-    }));
-  await saveSubscription(subscription);
-  state.browserEnabled = true;
-  state.subscriptionsLoaded = false;
-  toast(`You're subscribed to ${state.publisher.name}.`);
-  render();
+  if (permission !== "granted") return null;
+  return existingRegistration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: urlBase64ToUint8Array(state.webPush.publicKey),
+  });
 }
 
 async function saveSubscription(subscription) {
@@ -955,8 +966,10 @@ async function savePreferences() {
   if (state.whatsappOpen && !validateWhatsapp()) return;
   const privateOk = await verifyPrivatePasscodes();
   if (!privateOk) return;
-  const registration = await navigator.serviceWorker.getRegistration();
-  const subscription = await registration?.pushManager.getSubscription();
+  const subscription = await prepareBrowserSubscription();
+  if (subscription) {
+    state.browserEnabled = true;
+  }
   if (!subscription && !state.whatsappOpen) {
     toast("Enable browser notifications or WhatsApp alerts first.");
     return;
@@ -964,7 +977,8 @@ async function savePreferences() {
   await saveSubscription(subscription);
   state.subscriptionsLoaded = false;
   state.updatesLoaded = false;
-  toast("Preferences saved.");
+  toast(subscription ? "Preferences saved. Browser and WhatsApp alerts are ready." : "WhatsApp alert preferences saved.");
+  render();
 }
 
 async function verifyPrivatePasscodes() {
@@ -1193,7 +1207,7 @@ function staticPage(kind) {
         ["Open in Safari", "Visit the publisher link in Safari on your iPhone."],
         ["Add to Home Screen", "Tap Share, choose Add to Home Screen, then confirm MyAlert."],
         ["Return to Publisher", "Open MyAlert from the Home Screen and visit the publisher page again."],
-        ["Enable Alerts", "Choose topics and tap Enable Browser Notifications."],
+        ["Enable Alerts", "Choose topics and tap Submit Alert Preferences."],
       ],
     },
     privacy: {
@@ -1283,6 +1297,7 @@ function render() {
     html = publisherPage();
   } else if (path === "/") {
     state.publisher = null;
+    state.publisherIdentifier = "";
     state.error = "";
     html = homePage();
   } else if (path === "/search") {
@@ -1300,6 +1315,7 @@ function render() {
   }
   document.getElementById("app").innerHTML = html;
   bindEvents();
+  focusPublisherWhatsappFields();
 }
 
 function bindEvents() {
@@ -1353,11 +1369,6 @@ function bindEvents() {
       state.topicPasscodes[input.dataset.passcodeFor] = input.value;
     });
   });
-  document.querySelector("[data-enable-browser]")?.addEventListener("click", () => {
-    enableBrowserNotifications().catch((error) =>
-      toast(error.message || "We couldn't save your preferences. Please try again.")
-    );
-  });
   document.querySelector("[data-save-preferences]")?.addEventListener("click", () => {
     savePreferences().catch((error) =>
       toast(error.message || "We couldn't save your preferences. Please try again.")
@@ -1375,9 +1386,6 @@ function bindEvents() {
   });
   document.querySelector("[data-wa-consent]")?.addEventListener("change", (event) => {
     state.whatsappConsent = event.target.checked;
-  });
-  document.querySelector("[data-save-whatsapp]")?.addEventListener("click", () => {
-    savePreferences().catch((error) => toast(error.message || "WhatsApp alerts are temporarily unavailable."));
   });
   document.querySelector("[data-lookup-phone]")?.addEventListener("input", (event) => {
     saveSavedContact({ phoneNumber: normalizePhone(event.target.value) });
@@ -1398,6 +1406,18 @@ function bindEvents() {
   document.querySelectorAll("[data-unsubscribe]").forEach((button) => {
     button.addEventListener("click", () => unsubscribe(button.dataset.unsubscribe));
   });
+}
+
+function focusPublisherWhatsappFields() {
+  if (!state.publisherFocusPending || !state.publisher || state.loading) return;
+  state.publisherFocusPending = false;
+  window.setTimeout(() => {
+    const target =
+      document.querySelector("[data-wa-name]")?.value.trim()
+        ? document.querySelector("[data-wa-phone]")
+        : document.querySelector("[data-wa-name]");
+    target?.focus({ preventScroll: false });
+  }, 80);
 }
 
 function openMenu() {
