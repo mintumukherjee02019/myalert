@@ -47,6 +47,7 @@ let qrStream = null;
 let qrScanStopped = true;
 let html5QrScanner = null;
 let otpCooldownTimer = 0;
+let otpVerifyTimer = 0;
 let successRedirectTimer = 0;
 
 const icons = {
@@ -139,17 +140,33 @@ function setOtpCooldown(seconds) {
         window.clearInterval(otpCooldownTimer);
         otpCooldownTimer = 0;
       }
-      render();
+      updateOtpPanelStatus();
     }, 1000);
   }
 }
 
 function resetWhatsappOtpState() {
+  window.clearTimeout(otpVerifyTimer);
+  otpVerifyTimer = 0;
   state.whatsappOtp = "";
   state.whatsappOtpSent = false;
   state.whatsappOtpMessage = "";
   state.whatsappOtpCooldownUntil = 0;
   state.whatsappVerifiedPhone = "";
+}
+
+function updateOtpPanelStatus() {
+  const button = document.querySelector("[data-request-wa-otp]");
+  if (!button) return;
+  const phone = normalizePhone(state.whatsappPhone);
+  const verified = !!phone && state.whatsappVerifiedPhone === phone;
+  const cooldown = otpCooldownSeconds();
+  button.disabled = state.whatsappOtpBusy || cooldown > 0 || verified;
+  button.textContent = cooldown > 0 ? `Resend in ${cooldown}s` : state.whatsappOtpSent ? "Resend OTP" : "Send OTP";
+  const message = document.querySelector("[data-otp-message]");
+  if (message) {
+    message.textContent = state.whatsappOtpMessage;
+  }
 }
 
 function escapeHtml(value) {
@@ -802,12 +819,12 @@ function whatsappCard(canContinue, publisherName) {
               ? `<div class="otp-row">
                   <input class="input otp-input" data-wa-otp value="${escapeHtml(
                     state.whatsappOtp
-                  )}" inputmode="numeric" placeholder="Enter OTP" maxlength="6" />
+                  )}" inputmode="numeric" placeholder="Enter OTP" maxlength="4" autocomplete="one-time-code" />
                   <button class="primary-btn otp-btn" type="button" data-verify-wa-otp ${state.whatsappOtpBusy ? "disabled" : ""}>Verify</button>
                 </div>`
               : ""
           }
-          ${state.whatsappOtpMessage ? `<p class="otp-message">${escapeHtml(state.whatsappOtpMessage)}</p>` : ""}
+          <p class="otp-message" data-otp-message>${escapeHtml(state.whatsappOtpMessage)}</p>
         </div>
         <label class="consent">
           <input type="checkbox" data-wa-consent ${state.whatsappConsent ? "checked" : ""} />
@@ -1576,10 +1593,13 @@ function bindEvents() {
     requestWhatsAppOtp().catch((error) => toast(error.message || "Could not send OTP."));
   });
   document.querySelector("[data-wa-otp]")?.addEventListener("input", (event) => {
-    event.target.value = event.target.value.replace(/\D/g, "").slice(0, 6);
+    window.clearTimeout(otpVerifyTimer);
+    event.target.value = event.target.value.replace(/\D/g, "").slice(0, 4);
     state.whatsappOtp = event.target.value;
-    if (state.whatsappOtp.length >= 4) {
-      verifyWhatsAppOtp().catch((error) => toast(error.message || "Could not verify OTP."));
+    if (state.whatsappOtp.length === 4) {
+      otpVerifyTimer = window.setTimeout(() => {
+        verifyWhatsAppOtp().catch((error) => toast(error.message || "Could not verify OTP."));
+      }, 450);
     }
   });
   document.querySelector("[data-verify-wa-otp]")?.addEventListener("click", () => {
