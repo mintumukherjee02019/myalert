@@ -1,4 +1,4 @@
-const CACHE_NAME = "myalert-shell-v2";
+const CACHE_NAME = "myalert-shell-v3";
 const APP_SHELL = [
   "/",
   "/styles.css",
@@ -28,6 +28,21 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+
+  const shellPaths = new Set(["/", "/index.html", "/styles.css", "/app.js", "/manifest.webmanifest"]);
+  if (request.mode === "navigate" || shellPaths.has(url.pathname)) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+          return response;
+        })
+        .catch(() => caches.match(request).then((cached) => cached || caches.match("/")))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) return cached;
