@@ -1594,7 +1594,7 @@ function apiRequestPage() {
                 <input class="input" data-api-request-email value="${escapeHtml(state.apiRequestEmail)}" type="email" placeholder="you@example.com" autocomplete="email" />
               </div>
               ${state.apiRequestError ? `<p class="form-error">${escapeHtml(state.apiRequestError)}</p>` : ""}
-              <button class="primary-btn" type="submit" ${state.apiRequestBusy ? "disabled" : ""}>
+              <button class="primary-btn" type="submit" data-api-request-submit ${state.apiRequestBusy ? "disabled" : ""}>
                 ${state.apiRequestBusy ? "Sending..." : "Submit API Request"}
               </button>
             </form>
@@ -1811,6 +1811,10 @@ function bindEvents() {
     );
   });
   document.querySelector("[data-api-request-form]")?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    submitApiRequest().catch((error) => toast(error.message || "Could not send API request."));
+  });
+  document.querySelector("[data-api-request-submit]")?.addEventListener("click", (event) => {
     event.preventDefault();
     submitApiRequest().catch((error) => toast(error.message || "Could not send API request."));
   });
