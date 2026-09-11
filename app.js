@@ -305,12 +305,17 @@ function homePage() {
             <span class="eyebrow">${icons.bell} MyAlert</span>
             <h1>Get only the alerts you choose.</h1>
             <p>Follow trusted publishers and receive important updates without installing another app.</p>
-            <section class="code-card" aria-labelledby="code-title">
-              <h2 id="code-title">Have a publisher code?</h2>
-              <p class="section-subtitle">Enter the code shared by a publisher.</p>
+            <section class="code-card home-code-card" aria-labelledby="code-title">
+              <div class="code-card-head">
+                <span class="code-card-icon">${icons.bell}</span>
+                <div>
+                  <h2 id="code-title">Have a publisher code?</h2>
+                  <p class="section-subtitle">Enter the code shared by a MyAlert publisher.</p>
+                </div>
+              </div>
               <div class="code-row">
                 <input class="input" data-code-input placeholder="Enter publisher code" maxlength="12" />
-                <button class="secondary-btn" data-find-code>Find Publisher</button>
+                <button class="secondary-btn code-submit-btn" data-find-code>Find Publisher</button>
               </div>
             </section>
           </div>
