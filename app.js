@@ -32,6 +32,13 @@ const state = {
   whatsappOtpMessage: "",
   whatsappOtpCooldownUntil: 0,
   whatsappVerifiedPhone: "",
+  apiRequestName: "",
+  apiRequestPhone: "",
+  apiRequestEmail: "",
+  apiRequestBusy: false,
+  apiRequestSent: false,
+  apiRequestError: "",
+  apiRequestRedirectUntil: 0,
   loading: false,
   loadingPublishers: false,
   loadingSubscriptions: false,
@@ -50,6 +57,8 @@ let otpCooldownTimer = 0;
 let otpVerifyTimer = 0;
 let successRedirectTimer = 0;
 let successCountdownTimer = 0;
+let apiRequestRedirectTimer = 0;
+let apiRequestCountdownTimer = 0;
 
 const icons = {
   bell:
@@ -302,6 +311,7 @@ function header(active = "") {
         <a class="menu-link" href="/install" data-link>${icons.phone}iPhone Setup</a>
         <a class="menu-link" href="/help" data-link>${icons.message}Help</a>
         <a class="menu-link" href="/contact" data-link>${icons.phone}Contact</a>
+        <a class="menu-link" href="/api-req" data-link>${icons.message}API Req</a>
         <a class="menu-link" href="/privacy" data-link>${icons.shield}Privacy</a>
       </nav>
     </aside>
@@ -321,6 +331,7 @@ function footer() {
           <a href="/terms" data-link>Terms</a>
           <a href="/help" data-link>Help</a>
           <a href="/contact" data-link>Contact</a>
+          <a href="/api-req" data-link>API Req</a>
         </div>
       </div>
     </footer>
@@ -328,7 +339,7 @@ function footer() {
 }
 
 function appShell(content, active = "") {
-  return `<div class="page">${header(active)}<main>${content}</main>${footer()}${qrScannerModal()}</div>`;
+  return `<div class="page">${header(active)}<main>${content}</main>${footer()}${qrScannerModal()}${apiRequestSentDialog()}</div>`;
 }
 
 function qrScannerModal() {
@@ -349,6 +360,21 @@ function qrScannerModal() {
           <span class="qr-corners"></span>
         </div>
         ${state.qrError ? `<div class="warning-box">${escapeHtml(state.qrError)}</div>` : ""}
+      </section>
+    </div>
+  `;
+}
+
+function apiRequestSentDialog() {
+  if (!state.apiRequestSent) return "";
+  return `
+    <div class="modal-backdrop open">
+      <section class="qr-modal request-sent-modal" role="dialog" aria-modal="true" aria-labelledby="api-request-sent-title">
+        <div class="success-tick">${icons.check}</div>
+        <h2 id="api-request-sent-title">Request sent</h2>
+        <p>We have received your API request. Our team will contact you shortly.</p>
+        <p class="small-text redirect-countdown">Redirecting to home in <strong data-api-request-countdown>10</strong> seconds.</p>
+        <button class="primary-btn" type="button" data-api-request-home>Back to Home</button>
       </section>
     </div>
   `;
@@ -1196,6 +1222,81 @@ async function savePreferences() {
   routeTo("/done");
 }
 
+function updateApiRequestCountdown() {
+  const counter = document.querySelector("[data-api-request-countdown]");
+  if (!counter) return;
+  counter.textContent = Math.max(0, Math.ceil((state.apiRequestRedirectUntil - Date.now()) / 1000)).toString();
+}
+
+function clearApiRequestDialog() {
+  window.clearTimeout(apiRequestRedirectTimer);
+  window.clearInterval(apiRequestCountdownTimer);
+  apiRequestRedirectTimer = 0;
+  apiRequestCountdownTimer = 0;
+  state.apiRequestSent = false;
+  state.apiRequestRedirectUntil = 0;
+}
+
+function startApiRequestRedirect() {
+  window.clearTimeout(apiRequestRedirectTimer);
+  window.clearInterval(apiRequestCountdownTimer);
+  state.apiRequestSent = true;
+  state.apiRequestRedirectUntil = Date.now() + 10000;
+  apiRequestRedirectTimer = window.setTimeout(() => {
+    clearApiRequestDialog();
+    routeTo("/");
+  }, 10000);
+  apiRequestCountdownTimer = window.setInterval(updateApiRequestCountdown, 250);
+}
+
+async function submitApiRequest() {
+  if (state.apiRequestBusy) return;
+  const name = state.apiRequestName.trim();
+  const phoneNumber = normalizePhone(state.apiRequestPhone);
+  const email = state.apiRequestEmail.trim();
+  if (!name) {
+    state.apiRequestError = "Enter your name.";
+    render();
+    return;
+  }
+  if (phoneNumber.length !== 10) {
+    state.apiRequestError = "Enter a valid 10 digit phone number.";
+    render();
+    return;
+  }
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    state.apiRequestError = "Enter a valid email address.";
+    render();
+    return;
+  }
+  state.apiRequestBusy = true;
+  state.apiRequestError = "";
+  render();
+  try {
+    await fetchJson(`${API_BASE}/api/myalert-publisher-notifications/public/api-request`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name,
+        phoneNumber,
+        email,
+        sourcePage: window.location.href,
+      }),
+    });
+    saveSavedContact({ displayName: name, phoneNumber });
+    state.apiRequestName = "";
+    state.apiRequestPhone = "";
+    state.apiRequestEmail = "";
+    startApiRequestRedirect();
+  } catch (error) {
+    state.apiRequestError = error.message || "Could not send request. Please try again.";
+  } finally {
+    state.apiRequestBusy = false;
+    render();
+    updateApiRequestCountdown();
+  }
+}
+
 async function verifyPrivatePasscodes() {
   const privateTopicIds = state.topics
     .filter((topic) => topic.isPrivate && state.selectedTopicIds.has(topic.id))
@@ -1433,6 +1534,53 @@ function searchPage() {
   );
 }
 
+function apiRequestPage() {
+  const saved = getSavedContact();
+  if (!state.apiRequestName && saved.displayName) {
+    state.apiRequestName = saved.displayName;
+  }
+  if (!state.apiRequestPhone && saved.phoneNumber) {
+    state.apiRequestPhone = saved.phoneNumber;
+  }
+  return appShell(
+    `
+      <section class="section static-hero">
+        <div class="shell narrow-shell">
+          <div class="api-request-card">
+            <div class="section-kicker">MyAlert API</div>
+            <h1 class="page-title">Request API Access</h1>
+            <p class="page-subtitle">Share your contact details and our team will reach out for API integration support.</p>
+            <form class="api-request-form" data-api-request-form>
+              <div class="field">
+                <label>Name *</label>
+                <input class="input" data-api-request-name value="${escapeHtml(state.apiRequestName)}" placeholder="Your name" autocomplete="name" />
+              </div>
+              <div class="field">
+                <label>Phone Number *</label>
+                <div class="phone-input">
+                  <span>+91</span>
+                  <input class="input" data-api-request-phone value="${escapeHtml(
+                    displayIndianPhone(state.apiRequestPhone)
+                  )}" inputmode="tel" placeholder="98765 43210" maxlength="12" autocomplete="tel" />
+                </div>
+              </div>
+              <div class="field">
+                <label>Email</label>
+                <input class="input" data-api-request-email value="${escapeHtml(state.apiRequestEmail)}" type="email" placeholder="you@example.com" autocomplete="email" />
+              </div>
+              ${state.apiRequestError ? `<p class="form-error">${escapeHtml(state.apiRequestError)}</p>` : ""}
+              <button class="primary-btn" type="submit" ${state.apiRequestBusy ? "disabled" : ""}>
+                ${state.apiRequestBusy ? "Sending..." : "Submit API Request"}
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
+    `,
+    "/api-req"
+  );
+}
+
 function staticPage(kind) {
   const pages = {
     help: {
@@ -1561,6 +1709,8 @@ function render() {
     html = historyPage();
   } else if (path === "/done") {
     html = donePage();
+  } else if (path === "/api-req") {
+    html = apiRequestPage();
   } else if (path === "/help" || path === "/install" || path === "/privacy" || path === "/terms" || path === "/contact") {
     html = staticPage(path.slice(1));
   } else if (path.startsWith("/p/") || path.startsWith("/code/") || path.length > 1) {
@@ -1631,6 +1781,23 @@ function bindEvents() {
     savePreferences().catch((error) =>
       toast(error.message || "We couldn't save your preferences. Please try again.")
     );
+  });
+  document.querySelector("[data-api-request-form]")?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    submitApiRequest().catch((error) => toast(error.message || "Could not send API request."));
+  });
+  document.querySelector("[data-api-request-name]")?.addEventListener("input", (event) => {
+    state.apiRequestName = event.target.value;
+  });
+  document.querySelector("[data-api-request-phone]")?.addEventListener("input", (event) => {
+    state.apiRequestPhone = event.target.value;
+  });
+  document.querySelector("[data-api-request-email]")?.addEventListener("input", (event) => {
+    state.apiRequestEmail = event.target.value;
+  });
+  document.querySelector("[data-api-request-home]")?.addEventListener("click", () => {
+    clearApiRequestDialog();
+    routeTo("/");
   });
   document.querySelector("[data-whatsapp-toggle]")?.addEventListener("change", (event) => {
     state.whatsappOpen = event.target.checked;

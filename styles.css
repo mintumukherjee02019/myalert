@@ -996,6 +996,77 @@ a {
   color: var(--ink);
 }
 
+.narrow-shell {
+  max-width: 620px;
+}
+
+.api-request-card {
+  padding: 18px;
+  background:
+    radial-gradient(circle at top right, rgba(225, 29, 72, 0.12), transparent 30%),
+    #fff;
+  border: 1px solid #fecdd3;
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+}
+
+.section-kicker {
+  width: fit-content;
+  margin-bottom: 10px;
+  padding: 7px 10px;
+  color: var(--red);
+  background: #fff1f4;
+  border: 1px solid #fecdd3;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.api-request-form {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.api-request-form .primary-btn {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.form-error {
+  margin: 0;
+  padding: 10px 12px;
+  color: #be123c;
+  background: #fff1f4;
+  border: 1px solid #fecdd3;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.request-sent-modal {
+  place-items: center;
+  text-align: center;
+}
+
+.request-sent-modal h2 {
+  margin: 2px 0 0;
+  color: var(--ink);
+  font-size: 26px;
+  font-weight: 800;
+}
+
+.request-sent-modal p {
+  max-width: 330px;
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.request-sent-modal .primary-btn {
+  width: 100%;
+}
+
 .success-page {
   min-height: calc(100vh - 170px);
   display: grid;
