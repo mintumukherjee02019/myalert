@@ -514,6 +514,7 @@ a {
   color: #fff;
   background: var(--red);
   border-color: var(--red);
+  box-shadow: 0 10px 22px rgba(225, 29, 72, 0.18);
 }
 
 .section {
@@ -531,6 +532,46 @@ a {
 .publisher-grid {
   display: grid;
   gap: 14px;
+}
+
+.lazy-load-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin-top: 16px;
+  padding: 12px 14px;
+  color: var(--muted);
+  background: #fff7fb;
+  border: 1px dashed #fecdd3;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.lazy-load-status.complete {
+  border-style: solid;
+  background: #fff;
+}
+
+.loader-dot {
+  width: 10px;
+  height: 10px;
+  background: var(--red);
+  border-radius: 50%;
+  animation: loaderPulse 0.9s ease-in-out infinite;
+}
+
+@keyframes loaderPulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.78);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .publisher-card {

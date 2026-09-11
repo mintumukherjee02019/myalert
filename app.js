@@ -6,6 +6,7 @@ const state = {
   route: window.location.pathname,
   query: new URLSearchParams(window.location.search),
   activeCategory: "All",
+  homeVisiblePublishers: 5,
   search: "",
   filters: ["All"],
   publishers: [],
@@ -239,6 +240,16 @@ function syncRoute() {
   render();
 }
 
+function maybeLoadMoreHomePublishers() {
+  if (state.route !== "/" || state.loadingPublishers) return;
+  const marker = document.querySelector("[data-home-load-more]");
+  if (!marker) return;
+  const rect = marker.getBoundingClientRect();
+  if (rect.top > window.innerHeight + 180) return;
+  state.homeVisiblePublishers += 5;
+  render();
+}
+
 async function fetchPublicPublishers(query = "") {
   state.loadingPublishers = true;
   state.error = "";
@@ -384,6 +395,10 @@ function homePage() {
   if (!state.loadingPublishers && !state.publishersLoaded && !state.error) {
     setTimeout(() => fetchPublicPublishers(state.search), 0);
   }
+  const filters = [
+    state.activeCategory,
+    ...state.filters.filter((category) => category !== state.activeCategory),
+  ].filter(Boolean);
   const filtered = state.publishers.filter((publisher) => {
     const query = state.search.trim().toLowerCase();
     const categoryOk =
@@ -404,6 +419,8 @@ function homePage() {
         .includes(query);
     return categoryOk && searchOk;
   });
+  const visiblePublishers = filtered.slice(0, state.homeVisiblePublishers);
+  const hasMorePublishers = visiblePublishers.length < filtered.length;
 
   return appShell(
     `
@@ -450,7 +467,7 @@ function homePage() {
             </div>
           </div>
           <div class="chips" aria-label="Publisher filters">
-            ${state.filters
+            ${filters
               .map(
                 (category) =>
                   `<button class="chip ${
@@ -475,10 +492,20 @@ function homePage() {
               state.loadingPublishers
                 ? '<div class="empty">Loading real MyAlert publishers...</div>'
                 : filtered.length
-                ? filtered.map(publisherCard).join("")
+                ? visiblePublishers.map(publisherCard).join("")
                 : '<div class="empty">No active MyAlert publishers found. Try a publisher code or search again.</div>'
             }
           </div>
+          ${
+            hasMorePublishers
+              ? `<div class="lazy-load-status" data-home-load-more>
+                  <span class="loader-dot"></span>
+                  <span>Scroll to load 5 more publishers</span>
+                </div>`
+              : filtered.length > 5
+              ? '<p class="lazy-load-status complete">All publishers loaded.</p>'
+              : ""
+          }
         </div>
       </section>
     `,
@@ -1721,6 +1748,7 @@ function render() {
   document.getElementById("app").innerHTML = html;
   bindEvents();
   focusPublisherWhatsappFields();
+  window.setTimeout(maybeLoadMoreHomePublishers, 80);
 }
 
 function bindEvents() {
@@ -1740,6 +1768,7 @@ function bindEvents() {
   document.querySelectorAll("[data-menu-close]").forEach((el) => el.addEventListener("click", closeMenu));
   document.querySelector("[data-search-input]")?.addEventListener("input", (event) => {
     state.search = event.target.value;
+    state.homeVisiblePublishers = 5;
     state.publishersLoaded = false;
     window.clearTimeout(searchTimer);
     searchTimer = window.setTimeout(() => fetchPublicPublishers(state.search), 300);
@@ -1747,6 +1776,7 @@ function bindEvents() {
   document.querySelectorAll("[data-category]").forEach((button) => {
     button.addEventListener("click", () => {
       state.activeCategory = button.dataset.category;
+      state.homeVisiblePublishers = 5;
       render();
     });
   });
@@ -1887,6 +1917,7 @@ function closeMenu() {
 }
 
 window.addEventListener("popstate", syncRoute);
+window.addEventListener("scroll", maybeLoadMoreHomePublishers, { passive: true });
 document.addEventListener("DOMContentLoaded", () => {
   const pendingRoute = sessionStorage.getItem("myalert_pending_route");
   if (pendingRoute) {
