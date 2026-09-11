@@ -2,7 +2,7 @@
   "name": "MyAlert",
   "short_name": "MyAlert",
   "description": "Get only the alerts you choose.",
-  "start_url": "/my-alerts",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "theme_color": "#E11D48",
