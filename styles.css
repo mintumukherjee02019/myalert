@@ -790,6 +790,10 @@ a {
   gap: 12px;
 }
 
+.whatsapp-alert-card {
+  scroll-margin-top: 86px;
+}
+
 .delivery-title {
   display: flex;
   gap: 12px;

@@ -403,7 +403,9 @@ function publisherCard(publisher) {
       </div>
       <div class="publisher-foot">
         <strong>${escapeHtml(publisher.subscribers)} subscribers</strong>
-        <a class="secondary-btn" href="/p/${encodeURIComponent(publisher.slug)}" data-link>View Alerts ${icons.chevron}</a>
+        <a class="secondary-btn" href="/p/${encodeURIComponent(
+          publisher.slug
+        )}" data-link data-focus-alerts>View Alerts ${icons.chevron}</a>
       </div>
     </article>
   `;
@@ -723,7 +725,7 @@ function browserCard(canContinue) {
 
 function whatsappCard(canContinue, publisherName) {
   return `
-    <article class="delivery-card">
+    <article class="delivery-card whatsapp-alert-card" data-whatsapp-alerts>
       <div class="delivery-title">
         <span class="delivery-icon whatsapp">${icons.message}</span>
         <div>
@@ -1329,6 +1331,9 @@ function bindEvents() {
       const href = link.getAttribute("href");
       if (!href || href.startsWith("http")) return;
       event.preventDefault();
+      if (link.hasAttribute("data-focus-alerts")) {
+        state.publisherFocusPending = true;
+      }
       closeMenu();
       routeTo(href);
     });
@@ -1417,11 +1422,13 @@ function focusPublisherWhatsappFields() {
   if (!state.publisherFocusPending || !state.publisher || state.loading) return;
   state.publisherFocusPending = false;
   window.setTimeout(() => {
+    const section = document.querySelector("[data-whatsapp-alerts]");
     const target =
       document.querySelector("[data-wa-name]")?.value.trim()
         ? document.querySelector("[data-wa-phone]")
         : document.querySelector("[data-wa-name]");
-    target?.focus({ preventScroll: false });
+    section?.scrollIntoView({ block: "start", behavior: "smooth" });
+    window.setTimeout(() => target?.focus({ preventScroll: true }), 160);
   }, 80);
 }
 
