@@ -105,12 +105,43 @@ function getSavedContact() {
     phoneNumber: local.phoneNumber || "",
     displayName: local.displayName || "",
     lastEndpoint: local.lastEndpoint || "",
+    verifiedWhatsAppPhone: local.verifiedWhatsAppPhone || "",
+    verifiedWhatsAppName: local.verifiedWhatsAppName || "",
+    whatsappVerifiedAt: local.whatsappVerifiedAt || "",
   };
 }
 
 function saveSavedContact(nextContact) {
   const local = loadLocalState();
   saveLocalState({ ...local, ...nextContact });
+}
+
+function applySavedWhatsAppVerification() {
+  const saved = getSavedContact();
+  const currentPhone = normalizePhone(state.whatsappPhone);
+  const savedVerifiedPhone = normalizePhone(saved.verifiedWhatsAppPhone);
+  if (!currentPhone && saved.phoneNumber) {
+    state.whatsappPhone = saved.phoneNumber;
+  }
+  if (!state.whatsappName && (saved.verifiedWhatsAppName || saved.displayName)) {
+    state.whatsappName = saved.verifiedWhatsAppName || saved.displayName;
+  }
+  const nextPhone = normalizePhone(state.whatsappPhone);
+  state.whatsappVerifiedPhone =
+    nextPhone && savedVerifiedPhone === nextPhone ? savedVerifiedPhone : "";
+}
+
+function rememberWhatsAppVerification() {
+  const phoneNumber = normalizePhone(state.whatsappPhone);
+  if (!phoneNumber) return;
+  state.whatsappVerifiedPhone = phoneNumber;
+  saveSavedContact({
+    displayName: state.whatsappName.trim() || getSavedContact().displayName,
+    phoneNumber,
+    verifiedWhatsAppPhone: phoneNumber,
+    verifiedWhatsAppName: state.whatsappName.trim(),
+    whatsappVerifiedAt: new Date().toISOString(),
+  });
 }
 
 async function fetchJson(url, options = {}) {
@@ -485,8 +516,9 @@ async function fetchPublisher(identifier) {
     state.whatsappOpen = true;
     state.whatsappConsent = true;
     const savedContact = getSavedContact();
-    state.whatsappName = savedContact.displayName || state.whatsappName;
+    state.whatsappName = savedContact.verifiedWhatsAppName || savedContact.displayName || state.whatsappName;
     state.whatsappPhone = savedContact.phoneNumber || state.whatsappPhone;
+    applySavedWhatsAppVerification();
     state.publisherFocusPending = true;
     await hydratePublisherSubscription();
   } catch (error) {
@@ -513,8 +545,9 @@ async function hydratePublisherSubscription() {
     state.browserEnabled = subscription.hasBrowserPush === true;
     state.whatsappOpen = true;
     state.whatsappConsent = true;
-    state.whatsappName = subscription.displayName || saved.displayName || "";
-    state.whatsappPhone = subscription.phoneNumber || saved.phoneNumber || "";
+    state.whatsappName = saved.verifiedWhatsAppName || subscription.displayName || saved.displayName || "";
+    state.whatsappPhone = saved.verifiedWhatsAppPhone || subscription.phoneNumber || saved.phoneNumber || "";
+    applySavedWhatsAppVerification();
   } catch (_) {
     state.browserEnabled = false;
   }
@@ -924,6 +957,11 @@ async function saveSubscription(subscription) {
   saveSavedContact({
     displayName: state.whatsappOpen ? state.whatsappName.trim() : savedContact.displayName,
     phoneNumber: state.whatsappOpen ? normalizePhone(state.whatsappPhone) : savedContact.phoneNumber,
+    verifiedWhatsAppPhone: state.whatsappVerifiedPhone || savedContact.verifiedWhatsAppPhone,
+    verifiedWhatsAppName:
+      state.whatsappVerifiedPhone === normalizePhone(state.whatsappPhone)
+        ? state.whatsappName.trim()
+        : savedContact.verifiedWhatsAppName,
     lastEndpoint: subscription?.endpoint || savedContact.lastEndpoint || "",
   });
 }
@@ -1117,7 +1155,7 @@ async function verifyWhatsAppOtp() {
         anonymousDeviceId: getDeviceId(),
       }),
     });
-    state.whatsappVerifiedPhone = normalizePhone(state.whatsappPhone);
+    rememberWhatsAppVerification();
     state.whatsappOtpCooldownUntil = 0;
     window.clearInterval(otpCooldownTimer);
     otpCooldownTimer = 0;
@@ -1600,12 +1638,19 @@ function bindEvents() {
   });
   document.querySelector("[data-wa-name]")?.addEventListener("input", (event) => {
     state.whatsappName = event.target.value;
+    if (state.whatsappVerifiedPhone === normalizePhone(state.whatsappPhone)) {
+      saveSavedContact({
+        displayName: state.whatsappName.trim(),
+        verifiedWhatsAppName: state.whatsappName.trim(),
+      });
+    }
   });
   document.querySelector("[data-wa-phone]")?.addEventListener("input", (event) => {
     const previous = normalizePhone(state.whatsappPhone);
     state.whatsappPhone = event.target.value;
     if (normalizePhone(state.whatsappPhone) !== previous) {
       resetWhatsappOtpState();
+      applySavedWhatsAppVerification();
     }
   });
   document.querySelector("[data-request-wa-otp]")?.addEventListener("click", () => {
