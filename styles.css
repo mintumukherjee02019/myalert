@@ -275,6 +275,10 @@ a {
   padding: 12px;
 }
 
+.home-search-panel {
+  margin-top: 22px;
+}
+
 .search-row {
   display: grid;
   grid-template-columns: 1fr 52px;

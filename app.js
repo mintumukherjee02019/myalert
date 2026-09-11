@@ -305,18 +305,6 @@ function homePage() {
             <span class="eyebrow">${icons.bell} MyAlert</span>
             <h1>Get only the alerts you choose.</h1>
             <p>Follow trusted publishers and receive important updates without installing another app.</p>
-            <div class="search-panel" style="margin-top: 22px;">
-              <div class="search-row">
-                <label class="input-wrap">
-                  ${icons.search}
-                  <span class="hidden">Search publisher</span>
-                  <input class="input has-icon" data-search-input placeholder="Search publisher, school, store, media..." value="${escapeHtml(
-                    state.search
-                  )}" />
-                </label>
-                <button class="icon-btn" data-qr title="Scan QR" aria-label="Scan QR">${icons.qr}</button>
-              </div>
-            </div>
             <section class="code-card" aria-labelledby="code-title">
               <h2 id="code-title">Have a publisher code?</h2>
               <p class="section-subtitle">Enter the code shared by a publisher.</p>
@@ -336,6 +324,18 @@ function homePage() {
           </div>
         </div>
         <div class="shell">
+          <div class="search-panel home-search-panel">
+            <div class="search-row">
+              <label class="input-wrap">
+                ${icons.search}
+                <span class="hidden">Search publisher</span>
+                <input class="input has-icon" data-search-input placeholder="Search publisher, school, store, media..." value="${escapeHtml(
+                  state.search
+                )}" />
+              </label>
+              <button class="icon-btn" data-qr title="Scan QR" aria-label="Scan QR">${icons.qr}</button>
+            </div>
+          </div>
           <div class="chips" aria-label="Publisher filters">
             ${state.filters
               .map(
