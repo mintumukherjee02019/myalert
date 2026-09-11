@@ -744,7 +744,12 @@ function whatsappCard(canContinue, publisherName) {
         </div>
         <div class="field">
           <label>WhatsApp Number *</label>
-          <input class="input" data-wa-phone value="${escapeHtml(state.whatsappPhone)}" inputmode="tel" placeholder="+91 98765 43210" />
+          <div class="phone-input">
+            <span>+91</span>
+            <input class="input" data-wa-phone value="${escapeHtml(
+              displayIndianPhone(state.whatsappPhone)
+            )}" inputmode="tel" placeholder="98765 43210" maxlength="12" />
+          </div>
         </div>
         <label class="consent">
           <input type="checkbox" data-wa-consent ${state.whatsappConsent ? "checked" : ""} />
@@ -862,7 +867,18 @@ function validateWhatsapp() {
 }
 
 function normalizePhone(value) {
-  return String(value || "").replace(/\D/g, "").slice(-15);
+  const digits = String(value || "").replace(/\D/g, "");
+  if (digits.length === 10) return `91${digits}`;
+  if (digits.length === 11 && digits.startsWith("0")) return `91${digits.slice(1)}`;
+  return digits.slice(-15);
+}
+
+function displayIndianPhone(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (digits.length === 12 && digits.startsWith("91")) return digits.slice(2);
+  if (digits.length === 11 && digits.startsWith("0")) return digits.slice(1);
+  if (digits.length > 10) return digits.slice(-10);
+  return digits;
 }
 
 function resolveQrValue(value) {

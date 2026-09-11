@@ -841,6 +841,42 @@ a {
   gap: 6px;
 }
 
+.phone-input {
+  display: grid;
+  grid-template-columns: 58px 1fr;
+  align-items: center;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+}
+
+.phone-input:focus-within {
+  border-color: var(--red);
+  box-shadow: 0 0 0 4px var(--red-soft);
+}
+
+.phone-input span {
+  min-height: 50px;
+  display: inline-grid;
+  place-items: center;
+  color: var(--ink);
+  background: #fff5f7;
+  border-right: 1px solid #fecdd3;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.phone-input .input {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.phone-input .input:focus {
+  box-shadow: none;
+}
+
 .field label,
 .consent {
   color: var(--ink);
