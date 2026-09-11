@@ -1027,6 +1027,19 @@ a {
   margin-bottom: 12px;
 }
 
+.redirect-countdown strong {
+  display: inline-grid;
+  min-width: 24px;
+  height: 24px;
+  place-items: center;
+  margin: 0 2px;
+  color: #fff;
+  background: var(--success);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
 @keyframes successPop {
   0% {
     opacity: 0;

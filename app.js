@@ -49,6 +49,7 @@ let html5QrScanner = null;
 let otpCooldownTimer = 0;
 let otpVerifyTimer = 0;
 let successRedirectTimer = 0;
+let successCountdownTimer = 0;
 
 const icons = {
   bell:
@@ -1320,9 +1321,18 @@ function historyCard(item) {
 
 function donePage() {
   window.clearTimeout(successRedirectTimer);
+  window.clearInterval(successCountdownTimer);
+  const redirectAt = Date.now() + 10000;
+  const updateRedirectCountdown = () => {
+    const counter = document.querySelector("[data-success-countdown]");
+    if (!counter) return;
+    counter.textContent = Math.max(0, Math.ceil((redirectAt - Date.now()) / 1000)).toString();
+  };
   successRedirectTimer = window.setTimeout(() => {
     if (state.route === "/done") routeTo("/");
   }, 10000);
+  successCountdownTimer = window.setInterval(updateRedirectCountdown, 250);
+  window.setTimeout(updateRedirectCountdown, 0);
   return appShell(
     `
       <section class="section success-page">
@@ -1332,7 +1342,7 @@ function donePage() {
             <h1>All done</h1>
             <p>You are subscribed. Alerts from this publisher will now reach you for the topics you selected.</p>
             <a class="primary-btn" href="/" data-link>Back to Home</a>
-            <span class="small-text">You will be redirected automatically in 10 seconds.</span>
+            <span class="small-text redirect-countdown">You will be redirected to home in <strong data-success-countdown>10</strong> seconds.</span>
           </div>
         </div>
       </section>
@@ -1485,7 +1495,9 @@ function render() {
   const path = state.route;
   if (path !== "/done" && successRedirectTimer) {
     window.clearTimeout(successRedirectTimer);
+    window.clearInterval(successCountdownTimer);
     successRedirectTimer = 0;
+    successCountdownTimer = 0;
   }
   const queryPublisher = state.query.get("code") || state.query.get("partner");
   let html = "";
