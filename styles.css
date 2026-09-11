@@ -880,6 +880,56 @@ a {
   box-shadow: none;
 }
 
+.otp-panel {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  background: #fff7fb;
+  border: 1px solid #fecdd3;
+  border-radius: 12px;
+}
+
+.otp-panel.verified {
+  background: var(--success-bg);
+  border-color: #bbf7d0;
+}
+
+.otp-panel-head,
+.otp-row {
+  display: grid;
+  gap: 10px;
+}
+
+.otp-panel-head strong {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.otp-panel-head p,
+.otp-message {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.otp-panel.verified .otp-panel-head strong,
+.otp-panel.verified .otp-message {
+  color: #15803d;
+}
+
+.otp-btn {
+  min-height: 44px;
+}
+
+.otp-input {
+  text-align: center;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+}
+
 .field label,
 .consent {
   color: var(--ink);
@@ -920,6 +970,76 @@ a {
 
 .summary-list strong {
   color: var(--ink);
+}
+
+.success-page {
+  min-height: calc(100vh - 170px);
+  display: grid;
+  place-items: center;
+}
+
+.success-card {
+  max-width: 460px;
+  margin: 0 auto;
+  padding: 34px 22px;
+  text-align: center;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+}
+
+.success-tick {
+  width: 86px;
+  height: 86px;
+  display: inline-grid;
+  place-items: center;
+  color: #fff;
+  background: var(--success);
+  border-radius: 50%;
+  animation: successPop 0.7s ease both;
+  box-shadow: 0 18px 36px rgba(22, 163, 74, 0.25);
+}
+
+.success-tick svg {
+  width: 42px;
+  height: 42px;
+  stroke-width: 3;
+}
+
+.success-card h1 {
+  margin: 18px 0 8px;
+  color: var(--ink);
+  font-size: 30px;
+  font-weight: 800;
+}
+
+.success-card p {
+  max-width: 340px;
+  margin: 0 auto 20px;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.success-card .primary-btn {
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+@keyframes successPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.65);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .alerts-list .card,
@@ -1215,6 +1335,12 @@ a {
 
   .code-row {
     grid-template-columns: 1fr auto;
+  }
+
+  .otp-panel-head,
+  .otp-row {
+    grid-template-columns: 1fr auto;
+    align-items: center;
   }
 
   .chips {

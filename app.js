@@ -26,6 +26,12 @@ const state = {
   whatsappName: "",
   whatsappPhone: "",
   whatsappConsent: false,
+  whatsappOtp: "",
+  whatsappOtpSent: false,
+  whatsappOtpBusy: false,
+  whatsappOtpMessage: "",
+  whatsappOtpCooldownUntil: 0,
+  whatsappVerifiedPhone: "",
   loading: false,
   loadingPublishers: false,
   loadingSubscriptions: false,
@@ -40,6 +46,8 @@ let searchTimer = 0;
 let qrStream = null;
 let qrScanStopped = true;
 let html5QrScanner = null;
+let otpCooldownTimer = 0;
+let successRedirectTimer = 0;
 
 const icons = {
   bell:
@@ -117,6 +125,31 @@ function toast(message) {
   el.textContent = message;
   el.classList.add("show");
   window.setTimeout(() => el.classList.remove("show"), 2800);
+}
+
+function otpCooldownSeconds() {
+  return Math.max(0, Math.ceil((state.whatsappOtpCooldownUntil - Date.now()) / 1000));
+}
+
+function setOtpCooldown(seconds) {
+  state.whatsappOtpCooldownUntil = Date.now() + Math.max(0, Number(seconds) || 0) * 1000;
+  if (!otpCooldownTimer) {
+    otpCooldownTimer = window.setInterval(() => {
+      if (otpCooldownSeconds() <= 0) {
+        window.clearInterval(otpCooldownTimer);
+        otpCooldownTimer = 0;
+      }
+      render();
+    }, 1000);
+  }
+}
+
+function resetWhatsappOtpState() {
+  state.whatsappOtp = "";
+  state.whatsappOtpSent = false;
+  state.whatsappOtpMessage = "";
+  state.whatsappOtpCooldownUntil = 0;
+  state.whatsappVerifiedPhone = "";
 }
 
 function escapeHtml(value) {
@@ -724,6 +757,9 @@ function browserCard(canContinue) {
 }
 
 function whatsappCard(canContinue, publisherName) {
+  const phone = normalizePhone(state.whatsappPhone);
+  const verified = !!phone && state.whatsappVerifiedPhone === phone;
+  const cooldown = otpCooldownSeconds();
   return `
     <article class="delivery-card whatsapp-alert-card" data-whatsapp-alerts>
       <div class="delivery-title">
@@ -750,6 +786,28 @@ function whatsappCard(canContinue, publisherName) {
               displayIndianPhone(state.whatsappPhone)
             )}" inputmode="tel" placeholder="98765 43210" maxlength="12" />
           </div>
+        </div>
+        <div class="otp-panel ${verified ? "verified" : ""}">
+          <div class="otp-panel-head">
+            <div>
+              <strong>${verified ? "Number verified" : "Verify WhatsApp number"}</strong>
+              <p>${verified ? "You can submit your alert preferences now." : "We will send a 4 digit OTP to this WhatsApp number."}</p>
+            </div>
+            <button class="secondary-btn otp-btn" type="button" data-request-wa-otp ${state.whatsappOtpBusy || cooldown > 0 || verified ? "disabled" : ""}>
+              ${cooldown > 0 ? `Resend in ${cooldown}s` : state.whatsappOtpSent ? "Resend OTP" : "Send OTP"}
+            </button>
+          </div>
+          ${
+            state.whatsappOtpSent && !verified
+              ? `<div class="otp-row">
+                  <input class="input otp-input" data-wa-otp value="${escapeHtml(
+                    state.whatsappOtp
+                  )}" inputmode="numeric" placeholder="Enter OTP" maxlength="6" />
+                  <button class="primary-btn otp-btn" type="button" data-verify-wa-otp ${state.whatsappOtpBusy ? "disabled" : ""}>Verify</button>
+                </div>`
+              : ""
+          }
+          ${state.whatsappOtpMessage ? `<p class="otp-message">${escapeHtml(state.whatsappOtpMessage)}</p>` : ""}
         </div>
         <label class="consent">
           <input type="checkbox" data-wa-consent ${state.whatsappConsent ? "checked" : ""} />
@@ -848,9 +906,11 @@ async function saveSubscription(subscription) {
   });
 }
 
-function validateWhatsapp() {
+function validateWhatsapp(options = {}) {
+  const requireName = options.requireName !== false;
+  const requireConsent = options.requireConsent !== false;
   if (!state.whatsappOpen) return true;
-  if (!state.whatsappName.trim()) {
+  if (requireName && !state.whatsappName.trim()) {
     toast("Enter your name.");
     return false;
   }
@@ -859,7 +919,7 @@ function validateWhatsapp() {
     toast("Enter a valid WhatsApp number.");
     return false;
   }
-  if (!state.whatsappConsent) {
+  if (requireConsent && !state.whatsappConsent) {
     toast("Please accept WhatsApp consent.");
     return false;
   }
@@ -981,12 +1041,82 @@ function closeQrScanner() {
   render();
 }
 
+async function requestWhatsAppOtp() {
+  if (state.whatsappOtpBusy) return;
+  if (!validateWhatsapp({ requireName: false, requireConsent: false })) return;
+  state.whatsappOtpBusy = true;
+  state.whatsappOtpMessage = "";
+  render();
+  try {
+    const response = await fetch(`${API_BASE}/api/myalert-publisher-notifications/public/whatsapp-otp/request`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        phoneNumber: normalizePhone(state.whatsappPhone),
+        anonymousDeviceId: getDeviceId(),
+      }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    const retryAfter = Number(payload.retryAfterSeconds) || 0;
+    if (retryAfter > 0) setOtpCooldown(retryAfter);
+    if (!response.ok || payload.success !== true) {
+      state.whatsappOtpMessage = payload.message || "Please wait before requesting another OTP.";
+      return;
+    }
+    state.whatsappOtpSent = true;
+    state.whatsappOtp = "";
+    state.whatsappVerifiedPhone = "";
+    state.whatsappOtpMessage = "OTP sent. Enter it below to verify.";
+  } catch (error) {
+    state.whatsappOtpMessage = error.message || "Could not send OTP. Please try again.";
+  } finally {
+    state.whatsappOtpBusy = false;
+    render();
+  }
+}
+
+async function verifyWhatsAppOtp() {
+  if (state.whatsappOtpBusy) return;
+  if (!validateWhatsapp({ requireName: false, requireConsent: false })) return;
+  if (state.whatsappOtp.trim().length < 4) {
+    toast("Enter the OTP sent to your WhatsApp number.");
+    return;
+  }
+  state.whatsappOtpBusy = true;
+  state.whatsappOtpMessage = "";
+  render();
+  try {
+    const payload = await fetchJson(`${API_BASE}/api/myalert-publisher-notifications/public/whatsapp-otp/verify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        phoneNumber: normalizePhone(state.whatsappPhone),
+        otpCode: state.whatsappOtp.trim(),
+        anonymousDeviceId: getDeviceId(),
+      }),
+    });
+    state.whatsappVerifiedPhone = normalizePhone(state.whatsappPhone);
+    state.whatsappOtpMessage = payload.message || "WhatsApp number verified.";
+    toast("WhatsApp number verified.");
+  } catch (error) {
+    state.whatsappOtpMessage = error.message || "OTP verification failed.";
+  } finally {
+    state.whatsappOtpBusy = false;
+    render();
+  }
+}
+
 async function savePreferences() {
   if (state.selectedTopicIds.size === 0) {
     toast("Select at least one topic.");
     return;
   }
   if (state.whatsappOpen && !validateWhatsapp()) return;
+  if (state.whatsappOpen && state.whatsappVerifiedPhone !== normalizePhone(state.whatsappPhone)) {
+    toast("Verify your WhatsApp number with OTP first.");
+    document.querySelector("[data-request-wa-otp]")?.focus();
+    return;
+  }
   const privateOk = await verifyPrivatePasscodes();
   if (!privateOk) return;
   const subscription = await prepareBrowserSubscription();
@@ -1000,8 +1130,7 @@ async function savePreferences() {
   await saveSubscription(subscription);
   state.subscriptionsLoaded = false;
   state.updatesLoaded = false;
-  toast(subscription ? "Preferences saved. Browser and WhatsApp alerts are ready." : "WhatsApp alert preferences saved.");
-  render();
+  routeTo("/done");
 }
 
 async function verifyPrivatePasscodes() {
@@ -1172,6 +1301,29 @@ function historyCard(item) {
   `;
 }
 
+function donePage() {
+  window.clearTimeout(successRedirectTimer);
+  successRedirectTimer = window.setTimeout(() => {
+    if (state.route === "/done") routeTo("/");
+  }, 10000);
+  return appShell(
+    `
+      <section class="section success-page">
+        <div class="shell">
+          <div class="success-card">
+            <div class="success-tick">${icons.check}</div>
+            <h1>All done</h1>
+            <p>You are subscribed. Alerts from this publisher will now reach you for the topics you selected.</p>
+            <a class="primary-btn" href="/" data-link>Back to Home</a>
+            <span class="small-text">You will be redirected automatically in 10 seconds.</span>
+          </div>
+        </div>
+      </section>
+    `,
+    "/done"
+  );
+}
+
 function searchPage() {
   if (!state.loadingPublishers && !state.publishers.length && !state.error) {
     setTimeout(() => fetchPublicPublishers(state.search), 0);
@@ -1314,6 +1466,10 @@ async function unsubscribe(endpoint) {
 
 function render() {
   const path = state.route;
+  if (path !== "/done" && successRedirectTimer) {
+    window.clearTimeout(successRedirectTimer);
+    successRedirectTimer = 0;
+  }
   const queryPublisher = state.query.get("code") || state.query.get("partner");
   let html = "";
   if (path === "/" && queryPublisher) {
@@ -1329,6 +1485,8 @@ function render() {
     html = myAlertsPage();
   } else if (path === "/history") {
     html = historyPage();
+  } else if (path === "/done") {
+    html = donePage();
   } else if (path === "/help" || path === "/install" || path === "/privacy" || path === "/terms" || path === "/contact") {
     html = staticPage(path.slice(1));
   } else if (path.startsWith("/p/") || path.startsWith("/code/") || path.length > 1) {
@@ -1408,7 +1566,24 @@ function bindEvents() {
     state.whatsappName = event.target.value;
   });
   document.querySelector("[data-wa-phone]")?.addEventListener("input", (event) => {
+    const previous = normalizePhone(state.whatsappPhone);
     state.whatsappPhone = event.target.value;
+    if (normalizePhone(state.whatsappPhone) !== previous) {
+      resetWhatsappOtpState();
+    }
+  });
+  document.querySelector("[data-request-wa-otp]")?.addEventListener("click", () => {
+    requestWhatsAppOtp().catch((error) => toast(error.message || "Could not send OTP."));
+  });
+  document.querySelector("[data-wa-otp]")?.addEventListener("input", (event) => {
+    event.target.value = event.target.value.replace(/\D/g, "").slice(0, 6);
+    state.whatsappOtp = event.target.value;
+    if (state.whatsappOtp.length >= 4) {
+      verifyWhatsAppOtp().catch((error) => toast(error.message || "Could not verify OTP."));
+    }
+  });
+  document.querySelector("[data-verify-wa-otp]")?.addEventListener("click", () => {
+    verifyWhatsAppOtp().catch((error) => toast(error.message || "Could not verify OTP."));
   });
   document.querySelector("[data-wa-consent]")?.addEventListener("change", (event) => {
     state.whatsappConsent = event.target.checked;

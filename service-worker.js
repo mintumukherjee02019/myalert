@@ -1,4 +1,4 @@
-const CACHE_NAME = "myalert-shell-v10";
+const CACHE_NAME = "myalert-shell-v11";
 const APP_SHELL = [
   "/",
   "/styles.css",
