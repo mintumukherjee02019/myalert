@@ -597,17 +597,20 @@ a {
 }
 
 .verified {
-  color: var(--blue);
-}
-
-.home-publisher-card .verified {
   width: 20px;
   height: 20px;
   display: inline-grid;
   place-items: center;
-  color: var(--blue);
-  background: #fff;
+  flex: 0 0 auto;
+  color: #fff;
+  background: var(--blue);
   border-radius: 50%;
+}
+
+.verified svg {
+  width: 13px;
+  height: 13px;
+  stroke-width: 3;
 }
 
 .publisher-meta,
