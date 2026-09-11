@@ -383,7 +383,7 @@ function publisherCard(publisher) {
   const visibleTopics = topics.slice(0, 3);
   const more = topics.length - visibleTopics.length;
   return `
-    <article class="publisher-card">
+    <article class="publisher-card home-publisher-card">
       <div class="publisher-top">
         <div class="avatar">${initials(publisher.name)}</div>
         <div>

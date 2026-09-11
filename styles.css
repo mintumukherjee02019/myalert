@@ -537,6 +537,33 @@ a {
   padding: 16px;
 }
 
+.home-publisher-card {
+  position: relative;
+  overflow: hidden;
+  color: #fff;
+  background:
+    radial-gradient(circle at 90% 8%, rgba(255, 255, 255, 0.24), transparent 25%),
+    linear-gradient(135deg, #e91e4d 0%, #d70f3f 58%, #b80934 100%);
+  border-color: rgba(233, 30, 77, 0.36);
+  box-shadow: 0 18px 42px rgba(233, 30, 77, 0.22);
+}
+
+.home-publisher-card::after {
+  content: "";
+  position: absolute;
+  right: -56px;
+  bottom: -70px;
+  width: 180px;
+  height: 180px;
+  background: rgba(255, 255, 255, 0.13);
+  border-radius: 50%;
+}
+
+.home-publisher-card > * {
+  position: relative;
+  z-index: 1;
+}
+
 .publisher-top {
   display: grid;
   grid-template-columns: 52px 1fr;
@@ -549,6 +576,12 @@ a {
   font-weight: 800;
 }
 
+.home-publisher-card .avatar {
+  color: var(--red);
+  background: #fff;
+  box-shadow: 0 12px 24px rgba(124, 4, 38, 0.16);
+}
+
 .publisher-name {
   display: flex;
   align-items: center;
@@ -559,8 +592,22 @@ a {
   font-weight: 800;
 }
 
+.home-publisher-card .publisher-name {
+  color: #fff;
+}
+
 .verified {
   color: var(--blue);
+}
+
+.home-publisher-card .verified {
+  width: 20px;
+  height: 20px;
+  display: inline-grid;
+  place-items: center;
+  color: var(--red);
+  background: #fff;
+  border-radius: 50%;
 }
 
 .publisher-meta,
@@ -568,6 +615,11 @@ a {
 .small-text {
   color: var(--muted);
   font-size: 14px;
+}
+
+.home-publisher-card .publisher-meta,
+.home-publisher-card .publisher-desc {
+  color: rgba(255, 255, 255, 0.86);
 }
 
 .publisher-meta {
@@ -598,6 +650,12 @@ a {
   font-weight: 700;
 }
 
+.home-publisher-card .pill {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+}
+
 .publisher-foot {
   display: flex;
   align-items: center;
@@ -609,6 +667,22 @@ a {
 .publisher-foot strong {
   color: var(--ink);
   font-size: 14px;
+}
+
+.home-publisher-card .publisher-foot strong {
+  color: #fff;
+}
+
+.home-publisher-card .secondary-btn {
+  color: var(--red);
+  background: #fff;
+  border-color: #fff;
+  box-shadow: 0 12px 24px rgba(124, 4, 38, 0.16);
+}
+
+.home-publisher-card .secondary-btn:hover {
+  color: var(--red-dark);
+  background: #fff5f7;
 }
 
 .publisher-layout {
