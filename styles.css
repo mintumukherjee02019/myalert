@@ -1083,7 +1083,7 @@ a {
 
 .alert-detail-card-head {
   display: grid;
-  grid-template-columns: 58px minmax(0, 1fr) 52px 52px;
+  grid-template-columns: 58px minmax(0, 1fr) 52px 52px 52px;
   gap: 12px;
   align-items: center;
 }
@@ -1984,7 +1984,7 @@ a {
 
 @media (max-width: 520px) {
   .alert-detail-card-head {
-    grid-template-columns: 50px minmax(0, 1fr) 46px 46px;
+    grid-template-columns: 50px minmax(0, 1fr) 46px 46px 46px;
     gap: 8px;
   }
 

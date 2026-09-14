@@ -111,6 +111,8 @@ const icons = {
     '<svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
   share:
     '<svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="m16 6-4-4-4 4"/><path d="M12 2v13"/></svg>',
+  download:
+    '<svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>',
   bookmark:
     '<svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21 12 17 5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>',
   shield:
@@ -347,6 +349,227 @@ function formatPostTime(value) {
   if (diff < day) return `${Math.max(1, Math.floor(diff / hour))} hours ago`;
   if (diff < 7 * day) return `${Math.max(1, Math.floor(diff / day))} days ago`;
   return date.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function safeFileName(value) {
+  return String(value || "myalert-alert")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80) || "myalert-alert";
+}
+
+function publisherCodeForAlert(publisher = state.alertDetailPublisher) {
+  return (
+    publisher?.publicCode ||
+    publisher?.publisherCode ||
+    publisher?.code ||
+    publisher?.entityId ||
+    ""
+  );
+}
+
+function getAlertPdfContext() {
+  if (!state.alertDetail || !state.alertDetailPublisher) {
+    throw new Error("Alert details are not ready yet.");
+  }
+  const publisher = state.alertDetailPublisher;
+  const update = state.alertDetail;
+  const topicTitle = update.topics?.[0]?.title || "General";
+  const sentDate = update.sentAt || update.createdAt;
+  const code = publisherCodeForAlert(publisher);
+  return {
+    publisher,
+    update,
+    code,
+    topicTitle,
+    title: update.title || "Alert update",
+    body: update.body || "This update was sent by the publisher.",
+    published: sentDate
+      ? new Date(sentDate).toLocaleString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "Just now",
+    url: window.location.href,
+  };
+}
+
+function alertShareCaption(context = getAlertPdfContext()) {
+  const followLine = context.code
+    ? `Follow ${context.publisher.name || "this publisher"} on MyAlert with code ${context.code}.`
+    : `Follow ${context.publisher.name || "this publisher"} on MyAlert.`;
+  return `${context.title}\n\n${context.body}\n\n${followLine}\nPowered by MyAlert | myalert.in`;
+}
+
+function getJsPdfConstructor() {
+  return window.jspdf?.jsPDF || window.jsPDF;
+}
+
+function writeWrappedPdfText(doc, text, x, y, maxWidth, lineHeight, options = {}) {
+  const lines = doc.splitTextToSize(String(text || ""), maxWidth);
+  const maxY = options.maxY || 270;
+  for (const line of lines) {
+    if (y > maxY) {
+      doc.addPage();
+      drawAlertPdfFrame(doc);
+      y = 32;
+    }
+    doc.text(line, x, y);
+    y += lineHeight;
+  }
+  return y;
+}
+
+function drawAlertPdfFrame(doc) {
+  const pageWidth = 210;
+  const pageHeight = 297;
+  doc.setFillColor(225, 29, 72);
+  doc.rect(0, 0, pageWidth, 15, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  doc.text("Traeto", 14, 10);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.text("MyAlert public alert", pageWidth - 14, 10, { align: "right" });
+
+  doc.setDrawColor(254, 205, 211);
+  doc.setLineWidth(0.4);
+  doc.roundedRect(12, 24, pageWidth - 24, pageHeight - 52, 4, 4);
+
+  doc.setFillColor(255, 245, 247);
+  doc.rect(0, pageHeight - 20, pageWidth, 20, "F");
+  doc.setTextColor(100, 116, 139);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  doc.text("myalert.in", 14, pageHeight - 12);
+  doc.text("Bundle ID: in.myalert.pub", pageWidth - 14, pageHeight - 12, { align: "right" });
+  doc.setTextColor(225, 29, 72);
+  doc.textWithLink("Android", 14, pageHeight - 6, {
+    url: "https://play.google.com/store/apps/details?id=in.myalert.pub",
+  });
+  doc.textWithLink("iOS", 34, pageHeight - 6, {
+    url: "https://apps.apple.com/search?term=MyAlert%20Publisher",
+  });
+}
+
+function buildAlertPdf() {
+  const JsPDF = getJsPdfConstructor();
+  if (!JsPDF) {
+    throw new Error("PDF tools are still loading. Please try again in a moment.");
+  }
+  const context = getAlertPdfContext();
+  const doc = new JsPDF({ unit: "mm", format: "a4", compress: true });
+  const bodyLength = context.body.length;
+  const titleSize = bodyLength > 900 ? 19 : bodyLength > 500 ? 22 : 25;
+  const bodySize = bodyLength > 1100 ? 11 : bodyLength > 650 ? 12 : 13;
+  drawAlertPdfFrame(doc);
+
+  let y = 36;
+  doc.setTextColor(15, 23, 42);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(24);
+  y = writeWrappedPdfText(doc, context.publisher.name || "Publisher", 22, y, 166, 9, { maxY: 250 });
+
+  doc.setTextColor(100, 116, 139);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.text(`${context.publisher.category || "Publisher"} | ${context.publisher.city || context.publisher.location || "MyAlert"}`, 22, y + 2);
+  y += 14;
+
+  doc.setFillColor(255, 228, 234);
+  doc.roundedRect(22, y - 6, 38, 10, 4, 4, "F");
+  doc.setTextColor(225, 29, 72);
+  doc.setFontSize(10);
+  doc.text(context.topicTitle, 26, y + 1);
+  doc.setTextColor(100, 116, 139);
+  doc.text(context.published, 188, y + 1, { align: "right" });
+  y += 18;
+
+  doc.setTextColor(15, 23, 42);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(titleSize);
+  y = writeWrappedPdfText(doc, context.title, 22, y, 166, titleSize > 22 ? 10 : 8, { maxY: 250 });
+  y += 5;
+
+  doc.setTextColor(71, 85, 105);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(bodySize);
+  y = writeWrappedPdfText(doc, context.body, 22, y, 166, bodySize + 2, { maxY: 250 });
+  y += 10;
+
+  doc.setDrawColor(254, 205, 211);
+  doc.line(22, y, 188, y);
+  y += 9;
+
+  doc.setTextColor(15, 23, 42);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.text("Follow this publisher", 22, y);
+  y += 7;
+  doc.setTextColor(71, 85, 105);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10.5);
+  const followText = context.code
+    ? `Use publisher code ${context.code} on myalert.in to receive future alerts.`
+    : "Open myalert.in to receive future alerts from this publisher.";
+  y = writeWrappedPdfText(doc, followText, 22, y, 166, 6, { maxY: 250 });
+  doc.setTextColor(225, 29, 72);
+  doc.textWithLink("Open MyAlert", 22, y + 4, { url: context.url });
+  return { doc, context };
+}
+
+function alertPdfFileName(context = getAlertPdfContext()) {
+  return `${safeFileName(context.publisher.name)}-${safeFileName(context.title)}.pdf`;
+}
+
+async function downloadAlertPdf() {
+  try {
+    const { doc, context } = buildAlertPdf();
+    doc.save(alertPdfFileName(context));
+    showActionDialog("success", "PDF downloaded", "The alert PDF has been generated on your device.");
+  } catch (error) {
+    showActionDialog("error", "Could not download PDF", error.message || "Please try again.");
+  }
+}
+
+async function shareAlertPdf() {
+  try {
+    const { doc, context } = buildAlertPdf();
+    const fileName = alertPdfFileName(context);
+    const blob = doc.output("blob");
+    const caption = alertShareCaption(context);
+    const file = typeof File !== "undefined" ? new File([blob], fileName, { type: "application/pdf" }) : null;
+    if (file && navigator.canShare?.({ files: [file] })) {
+      await navigator.share({
+        title: context.title,
+        text: caption,
+        files: [file],
+      });
+      return;
+    }
+    if (navigator.share) {
+      await navigator.share({
+        title: context.title,
+        text: caption,
+        url: context.url,
+      });
+      return;
+    }
+    doc.save(fileName);
+    await navigator.clipboard?.writeText(caption).catch(() => {});
+    showActionDialog(
+      "success",
+      "PDF downloaded",
+      "Sharing files is not supported in this browser, so the PDF was downloaded and the caption was copied where supported."
+    );
+  } catch (error) {
+    showActionDialog("error", "Could not share PDF", error.message || "Please try again.");
+  }
 }
 
 function routeTo(path) {
@@ -1248,9 +1471,10 @@ function alertDetailPage() {
             <div class="alert-detail-card-head">
               <div class="alert-detail-icon">${icons.posts}</div>
               <h2>Update details</h2>
-              <button class="detail-icon-btn" type="button" data-share-alert="${escapeHtml(
+              <button class="detail-icon-btn" type="button" data-download-alert-pdf aria-label="Download alert PDF">${icons.download}</button>
+              <button class="detail-icon-btn" type="button" data-share-alert-pdf="${escapeHtml(
                 window.location.href
-              )}" aria-label="Share alert">${icons.share}</button>
+              )}" aria-label="Share alert PDF">${icons.share}</button>
               <button class="detail-icon-btn ${saved ? "saved" : ""}" type="button" data-save-alert aria-label="${
                 saved ? "Alert saved" : "Save alert"
               }">${icons.bookmark}</button>
@@ -2421,16 +2645,11 @@ function bindEvents() {
       routeTo(href);
     });
   });
-  document.querySelector("[data-share-alert]")?.addEventListener("click", (event) => {
-    const url = event.currentTarget.dataset.shareAlert || window.location.href;
-    if (navigator.share) {
-      navigator.share({ title: "MyAlert update", url }).catch(() => {});
-      return;
-    }
-    navigator.clipboard?.writeText(url).then(
-      () => toast("Alert link copied."),
-      () => toast("Copy this alert link from your browser address bar.")
-    );
+  document.querySelector("[data-download-alert-pdf]")?.addEventListener("click", () => {
+    downloadAlertPdf();
+  });
+  document.querySelector("[data-share-alert-pdf]")?.addEventListener("click", () => {
+    shareAlertPdf();
   });
   document.querySelector("[data-save-alert]")?.addEventListener("click", saveCurrentAlert);
   document.querySelectorAll("[data-remove-saved-alert]").forEach((button) => {
