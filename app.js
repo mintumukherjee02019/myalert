@@ -12,6 +12,7 @@ const state = {
   publishers: [],
   subscriptions: [],
   myAlertsSearch: "",
+  savedAlerts: [],
   updates: [],
   publisherPosts: [],
   alertDetail: null,
@@ -152,6 +153,60 @@ function getSavedContact() {
 function saveSavedContact(nextContact) {
   const local = loadLocalState();
   saveLocalState({ ...local, ...nextContact });
+}
+
+function getSavedAlerts() {
+  const local = loadLocalState();
+  return Array.isArray(local.savedAlerts) ? local.savedAlerts : [];
+}
+
+function saveSavedAlerts(savedAlerts) {
+  const local = loadLocalState();
+  saveLocalState({ ...local, savedAlerts });
+  state.savedAlerts = savedAlerts;
+}
+
+function isAlertSaved(alertId) {
+  if (!state.savedAlerts.length) state.savedAlerts = getSavedAlerts();
+  return state.savedAlerts.some((item) => item.id === alertId);
+}
+
+function currentAlertSavePayload() {
+  if (!state.alertDetail || !state.alertDetailPublisher) return null;
+  const publisher = state.alertDetailPublisher;
+  const update = state.alertDetail;
+  const topicTitle = update.topics?.[0]?.title || "General";
+  return {
+    id: update.id,
+    title: update.title || "Alert update",
+    body: update.body || "",
+    topic: topicTitle,
+    publisherName: publisher.name || "Publisher",
+    publisherSlug: publisher.publicSlug || publisher.slug || publisher.id || state.alertDetailPublisherIdentifier,
+    publisherCategory: publisher.category || "Publisher",
+    publisherLocation: publisher.city || publisher.location || "MyAlert",
+    imageUrl: update.generatedImage?.imageUrl || update.imageUrl || "",
+    sentAt: update.sentAt || update.createdAt || new Date().toISOString(),
+    savedAt: new Date().toISOString(),
+    url: window.location.pathname + window.location.search,
+  };
+}
+
+function saveCurrentAlert() {
+  const payload = currentAlertSavePayload();
+  if (!payload?.id) {
+    showActionDialog("error", "Could not save alert", "This alert is not ready yet. Please try again.");
+    return;
+  }
+  const next = [payload, ...getSavedAlerts().filter((item) => item.id !== payload.id)].slice(0, 50);
+  saveSavedAlerts(next);
+  showActionDialog("success", "Alert saved", "You can find this alert under My Alerts.");
+}
+
+function removeSavedAlert(alertId) {
+  const next = getSavedAlerts().filter((item) => item.id !== alertId);
+  saveSavedAlerts(next);
+  showActionDialog("success", "Saved alert removed", "This alert was removed from your saved list.");
 }
 
 function applySavedWhatsAppVerification() {
@@ -1146,6 +1201,7 @@ function alertDetailPage() {
   const priority = update.priority || "normal";
   const imageUrl = update.generatedImage?.imageUrl || update.imageUrl || "";
   const sentDate = update.sentAt || update.createdAt;
+  const saved = isAlertSaved(update.id);
   const channels = [
     "Browser Push",
     update.whatsappDelivery?.requested ? "WhatsApp" : "",
@@ -1195,7 +1251,9 @@ function alertDetailPage() {
               <button class="detail-icon-btn" type="button" data-share-alert="${escapeHtml(
                 window.location.href
               )}" aria-label="Share alert">${icons.share}</button>
-              <button class="detail-icon-btn" type="button" aria-label="Save alert">${icons.bookmark}</button>
+              <button class="detail-icon-btn ${saved ? "saved" : ""}" type="button" data-save-alert aria-label="${
+                saved ? "Alert saved" : "Save alert"
+              }">${icons.bookmark}</button>
             </div>
             <div class="detail-rows">
               ${detailRow(icons.bell, "Topic", topicTitle)}
@@ -1789,6 +1847,7 @@ async function verifyPrivatePasscodes() {
 
 function myAlertsPage() {
   const saved = getSavedContact();
+  if (!state.savedAlerts.length) state.savedAlerts = getSavedAlerts();
   if (!state.loadingSubscriptions && !state.subscriptionsLoaded && !state.error) {
     setTimeout(() => fetchPublicSubscriptions(), 0);
   }
@@ -1806,6 +1865,20 @@ function myAlertsPage() {
       .join(" ")
       .toLowerCase();
     return haystack.includes(searchTerm);
+  });
+  const visibleSavedAlerts = state.savedAlerts.filter((item) => {
+    if (!searchTerm) return true;
+    return [
+      item.title,
+      item.body,
+      item.topic,
+      item.publisherName,
+      item.publisherCategory,
+      item.publisherLocation,
+    ]
+      .join(" ")
+      .toLowerCase()
+      .includes(searchTerm);
   });
   return appShell(
     `
@@ -1841,11 +1914,48 @@ function myAlertsPage() {
                 : '<div class="empty">No subscriptions found for this device or WhatsApp number.</div>'
             }
           </div>
+          <div class="saved-alerts-section">
+            <div>
+              <h2 class="section-title">Saved Alerts</h2>
+              <p class="section-subtitle">Alerts you bookmarked on this device.</p>
+            </div>
+            <div class="saved-alerts-list">
+              ${
+                visibleSavedAlerts.length
+                  ? visibleSavedAlerts.map(savedAlertCard).join("")
+                  : state.savedAlerts.length
+                  ? '<div class="empty">No saved alerts match your search.</div>'
+                  : '<div class="empty">Tap the bookmark icon on any alert detail page to save it here.</div>'
+              }
+            </div>
+          </div>
         </div>
       </section>
     `,
     "/my-alerts"
   );
+}
+
+function savedAlertCard(item) {
+  const href = item.url || `/p/${encodeURIComponent(item.publisherSlug || "")}/alerts/${encodeURIComponent(item.id)}`;
+  return `
+    <article class="saved-alert-card">
+      <a href="${escapeHtml(href)}" data-link>
+        <div class="post-icon">
+          ${item.imageUrl ? `<img src="${escapeHtml(item.imageUrl)}" alt="" loading="lazy" />` : icons.bookmark}
+        </div>
+        <div>
+          <div class="publisher-meta">${escapeHtml(item.publisherName || "Publisher")} &bull; ${escapeHtml(
+    item.topic || "Alert"
+  )}</div>
+          <h3>${escapeHtml(item.title || "Alert update")}</h3>
+          <p>${escapeHtml(item.body || "Open this saved alert for details.")}</p>
+          <span class="small-text">Saved ${escapeHtml(formatPostTime(item.savedAt || item.sentAt))}</span>
+        </div>
+      </a>
+      <button class="detail-icon-btn" type="button" data-remove-saved-alert="${escapeHtml(item.id)}" aria-label="Remove saved alert">${icons.close}</button>
+    </article>
+  `;
 }
 
 function subscriptionCard(item) {
@@ -2321,6 +2431,13 @@ function bindEvents() {
       () => toast("Alert link copied."),
       () => toast("Copy this alert link from your browser address bar.")
     );
+  });
+  document.querySelector("[data-save-alert]")?.addEventListener("click", saveCurrentAlert);
+  document.querySelectorAll("[data-remove-saved-alert]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+      removeSavedAlert(button.dataset.removeSavedAlert);
+    });
   });
   document.querySelector("[data-action-dialog-close]")?.addEventListener("click", closeActionDialog);
   document.querySelector("[data-menu-open]")?.addEventListener("click", openMenu);
