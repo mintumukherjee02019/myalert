@@ -1145,6 +1145,18 @@ a {
   font-weight: 900;
 }
 
+.detail-row-message {
+  align-items: start;
+}
+
+.detail-row-message strong {
+  max-width: 760px;
+  color: #334155;
+  font-size: 19px;
+  line-height: 1.42;
+  font-weight: 800;
+}
+
 .detail-note {
   margin: 0;
   color: var(--muted);

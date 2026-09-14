@@ -1551,7 +1551,6 @@ function alertDetailPage() {
               <span class="post-time">${escapeHtml(formatPostTime(sentDate))}</span>
             </div>
             <h2>${escapeHtml(update.title || "Alert update")}</h2>
-            <p>${escapeHtml(update.body || "This update was sent by the publisher.")}</p>
           </section>
 
           <section class="alert-detail-card">
@@ -1567,6 +1566,7 @@ function alertDetailPage() {
               }">${icons.bookmark}</button>
             </div>
             <div class="detail-rows">
+              ${detailRow(icons.message, "Alert Details", update.body || "This update was sent by the publisher.", "detail-row-message")}
               ${detailRow(icons.bell, "Topic", topicTitle)}
               ${detailRow(icons.calendar, "Published", sentDate ? new Date(sentDate).toLocaleString("en-IN", {
                 day: "2-digit",
@@ -1576,7 +1576,7 @@ function alertDetailPage() {
                 minute: "2-digit",
               }) : "Just now")}
               ${detailRow(icons.clock, "Priority", priority[0].toUpperCase() + priority.slice(1))}
-              ${detailRow(icons.message, "Channels", channels.join(", ") || "Browser Push")}
+              ${detailRow(icons.bell, "Channels", channels.join(", ") || "Browser Push")}
             </div>
           </section>
 
@@ -1598,9 +1598,9 @@ function alertDetailPage() {
   );
 }
 
-function detailRow(icon, label, value) {
+function detailRow(icon, label, value, className = "") {
   return `
-    <div class="detail-row">
+    <div class="detail-row ${escapeHtml(className)}">
       <span class="detail-row-icon">${icon}</span>
       <div>
         <span>${escapeHtml(label)}</span>
