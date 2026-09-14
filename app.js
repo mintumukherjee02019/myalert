@@ -1,6 +1,8 @@
 const API_BASE = "https://api.traeto.in";
 const STORAGE_KEY = "myalert_state_v1";
 const DEVICE_KEY = "myalert_device_id";
+const MYALERT_ANDROID_DOWNLOAD_URL = "https://play.google.com/store/apps/details?id=in.myalert.pub";
+const MYALERT_IOS_DOWNLOAD_URL = "https://apps.apple.com/search?term=MyAlert%20Publisher";
 
 const state = {
   route: window.location.pathname,
@@ -416,7 +418,7 @@ function writeWrappedPdfText(doc, text, x, y, maxWidth, lineHeight, options = {}
     if (y > maxY) {
       doc.addPage();
       drawAlertPdfFrame(doc);
-      y = 32;
+      y = 58;
     }
     doc.text(line, x, y);
     y += lineHeight;
@@ -424,37 +426,72 @@ function writeWrappedPdfText(doc, text, x, y, maxWidth, lineHeight, options = {}
   return y;
 }
 
+function drawPdfDownloadBadge(doc, x, y, width, label, sublabel, url) {
+  const height = 13;
+  doc.setFillColor(15, 23, 42);
+  doc.roundedRect(x, y, width, height, 3, 3, "F");
+  doc.setDrawColor(225, 29, 72);
+  doc.setLineWidth(0.25);
+  doc.roundedRect(x, y, width, height, 3, 3);
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9.5);
+  doc.text(label, x + 14, y + 5.4);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(6.8);
+  doc.text(sublabel, x + 14, y + 9.8);
+  doc.setDrawColor(255, 255, 255);
+  doc.setLineWidth(0.8);
+  doc.line(x + 6.5, y + 3.2, x + 6.5, y + 8.6);
+  doc.line(x + 4.6, y + 6.9, x + 6.5, y + 8.8);
+  doc.line(x + 8.4, y + 6.9, x + 6.5, y + 8.8);
+  doc.line(x + 4.5, y + 10.4, x + 8.5, y + 10.4);
+  doc.link(x, y, width, height, { url });
+}
+
 function drawAlertPdfFrame(doc) {
   const pageWidth = 210;
   const pageHeight = 297;
-  doc.setFillColor(225, 29, 72);
-  doc.rect(0, 0, pageWidth, 15, "F");
-  doc.setTextColor(255, 255, 255);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
-  doc.text("Traeto", 14, 10);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.text("MyAlert public alert", pageWidth - 14, 10, { align: "right" });
-
-  doc.setDrawColor(254, 205, 211);
-  doc.setLineWidth(0.4);
-  doc.roundedRect(12, 24, pageWidth - 24, pageHeight - 52, 4, 4);
-
+  doc.setFillColor(255, 255, 255);
+  doc.rect(0, 0, pageWidth, pageHeight, "F");
   doc.setFillColor(255, 245, 247);
-  doc.rect(0, pageHeight - 20, pageWidth, 20, "F");
+  doc.rect(0, 0, pageWidth, 39, "F");
+  doc.setFillColor(225, 29, 72);
+  doc.roundedRect(14, 11, 14, 14, 4, 4, "F");
+  doc.setDrawColor(255, 255, 255);
+  doc.setLineWidth(1.1);
+  doc.circle(21, 18, 3.3);
+  doc.line(18.2, 22.8, 23.8, 22.8);
+  doc.setTextColor(15, 23, 42);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(17);
+  doc.text("Traeto", 33, 17);
+  doc.setTextColor(225, 29, 72);
+  doc.text("MyAlert", 33, 25);
   doc.setTextColor(100, 116, 139);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
-  doc.text("myalert.in", 14, pageHeight - 12);
-  doc.text("Bundle ID: in.myalert.pub", pageWidth - 14, pageHeight - 12, { align: "right" });
-  doc.setTextColor(225, 29, 72);
-  doc.textWithLink("Android", 14, pageHeight - 6, {
-    url: "https://play.google.com/store/apps/details?id=in.myalert.pub",
-  });
-  doc.textWithLink("iOS", 34, pageHeight - 6, {
-    url: "https://apps.apple.com/search?term=MyAlert%20Publisher",
-  });
+  doc.text("Public alert document", pageWidth - 14, 17, { align: "right" });
+  doc.text("Generated on myalert.in", pageWidth - 14, 25, { align: "right" });
+
+  doc.setDrawColor(254, 205, 211);
+  doc.setLineWidth(0.35);
+  doc.roundedRect(12, 46, pageWidth - 24, pageHeight - 82, 5, 5);
+  doc.setFillColor(225, 29, 72);
+  doc.rect(12, 46, 2.2, pageHeight - 82, "F");
+
+  doc.setFillColor(255, 245, 247);
+  doc.roundedRect(12, pageHeight - 29, pageWidth - 24, 21, 5, 5, "F");
+  doc.setTextColor(15, 23, 42);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.text("Download the MyAlert Publisher app", 18, pageHeight - 20);
+  doc.setTextColor(100, 116, 139);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.text("Create and send trusted community alerts.", 18, pageHeight - 14);
+  drawPdfDownloadBadge(doc, pageWidth - 95, pageHeight - 25, 36, "Android", "Download app", MYALERT_ANDROID_DOWNLOAD_URL);
+  drawPdfDownloadBadge(doc, pageWidth - 54, pageHeight - 25, 36, "iOS", "Download app", MYALERT_IOS_DOWNLOAD_URL);
 }
 
 function buildAlertPdf() {
@@ -469,23 +506,36 @@ function buildAlertPdf() {
   const bodySize = bodyLength > 1100 ? 11 : bodyLength > 650 ? 12 : 13;
   drawAlertPdfFrame(doc);
 
-  let y = 36;
+  let y = 61;
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(20, y - 9, 170, 28, 4, 4, "F");
+  doc.setDrawColor(254, 205, 211);
+  doc.roundedRect(20, y - 9, 170, 28, 4, 4);
   doc.setTextColor(15, 23, 42);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(24);
-  y = writeWrappedPdfText(doc, context.publisher.name || "Publisher", 22, y, 166, 9, { maxY: 250 });
+  doc.setFontSize(22);
+  y = writeWrappedPdfText(doc, context.publisher.name || "Publisher", 27, y, 156, 8, { maxY: 250 });
 
   doc.setTextColor(100, 116, 139);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
-  doc.text(`${context.publisher.category || "Publisher"} | ${context.publisher.city || context.publisher.location || "MyAlert"}`, 22, y + 2);
-  y += 14;
+  doc.text(`${context.publisher.category || "Publisher"} | ${context.publisher.city || context.publisher.location || "MyAlert"}`, 27, y + 2);
+  if (context.code) {
+    doc.setFillColor(255, 228, 234);
+    doc.roundedRect(147, 54, 36, 10, 4, 4, "F");
+    doc.setTextColor(225, 29, 72);
+    doc.text(context.code, 165, 60.5, { align: "center" });
+  }
+  y += 18;
 
+  const topicLabel =
+    context.topicTitle.length > 28 ? `${context.topicTitle.slice(0, 25)}...` : context.topicTitle;
+  const topicWidth = Math.min(82, Math.max(38, doc.getTextWidth(topicLabel) + 11));
   doc.setFillColor(255, 228, 234);
-  doc.roundedRect(22, y - 6, 38, 10, 4, 4, "F");
+  doc.roundedRect(22, y - 6, topicWidth, 10, 4, 4, "F");
   doc.setTextColor(225, 29, 72);
   doc.setFontSize(10);
-  doc.text(context.topicTitle, 26, y + 1);
+  doc.text(topicLabel, 26, y + 1);
   doc.setTextColor(100, 116, 139);
   doc.text(context.published, 188, y + 1, { align: "right" });
   y += 18;
