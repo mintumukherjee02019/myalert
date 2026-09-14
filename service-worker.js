@@ -1,8 +1,8 @@
-const CACHE_NAME = "myalert-shell-v23";
+const CACHE_NAME = "myalert-shell-v24";
 const APP_SHELL = [
   "/",
-  "/styles.css?v=20260914-pdf3",
-  "/app.js?v=20260914-pdf3",
+  "/styles.css?v=20260914-pdf4",
+  "/app.js?v=20260914-pdf4",
   "/manifest.webmanifest",
   "/assets/share/myalert-preview.png",
 ];

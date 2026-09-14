@@ -449,40 +449,53 @@ function drawPdfDownloadBadge(doc, x, y, width, label, sublabel, url) {
   doc.link(x, y, width, height, { url });
 }
 
+function drawMyAlertPdfLogo(doc, x, y) {
+  doc.setFillColor(225, 29, 72);
+  doc.roundedRect(x, y, 15, 15, 4, 4, "F");
+  doc.setDrawColor(255, 255, 255);
+  doc.setLineWidth(1.2);
+  doc.ellipse(x + 7.5, y + 7.4, 3.6, 4.1, "S");
+  doc.line(x + 4.3, y + 11.1, x + 10.7, y + 11.1);
+  doc.setFillColor(255, 255, 255);
+  doc.circle(x + 7.5, y + 12.4, 0.8, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(18);
+  doc.setTextColor(15, 23, 42);
+  doc.text("My", x + 20, y + 7.2);
+  doc.setTextColor(225, 29, 72);
+  doc.text("Alert", x + 30, y + 7.2);
+  doc.setTextColor(100, 116, 139);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.2);
+  doc.text("Get only the alerts you choose.", x + 20, y + 13.3);
+}
+
 function drawAlertPdfFrame(doc) {
   const pageWidth = 210;
   const pageHeight = 297;
   doc.setFillColor(255, 255, 255);
   doc.rect(0, 0, pageWidth, pageHeight, "F");
-  doc.setFillColor(255, 245, 247);
-  doc.rect(0, 0, pageWidth, 39, "F");
-  doc.setFillColor(225, 29, 72);
-  doc.roundedRect(14, 11, 14, 14, 4, 4, "F");
-  doc.setDrawColor(255, 255, 255);
-  doc.setLineWidth(1.1);
-  doc.circle(21, 18, 3.3);
-  doc.line(18.2, 22.8, 23.8, 22.8);
-  doc.setTextColor(15, 23, 42);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(19);
-  doc.text("My", 33, 18);
-  doc.setTextColor(225, 29, 72);
-  doc.text("Alert", 43, 18);
-  doc.setTextColor(100, 116, 139);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8.5);
-  doc.text("Get only the alerts you choose.", 33, 26);
-  doc.text("Public alert document", pageWidth - 14, 17, { align: "right" });
-  doc.text("Generated on myalert.in", pageWidth - 14, 25, { align: "right" });
+  doc.setFillColor(255, 247, 249);
+  doc.rect(0, 0, pageWidth, 36, "F");
+  doc.setFillColor(255, 228, 234);
+  doc.circle(pageWidth - 20, 10, 22, "F");
+  drawMyAlertPdfLogo(doc, 14, 10);
 
   doc.setDrawColor(254, 205, 211);
-  doc.setLineWidth(0.35);
-  doc.roundedRect(12, 46, pageWidth - 24, pageHeight - 82, 5, 5);
+  doc.setLineWidth(0.25);
+  doc.line(14, 36, pageWidth - 14, 36);
+  doc.setTextColor(100, 116, 139);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.2);
+  doc.text("PUBLIC ALERT DOCUMENT", pageWidth - 14, 16, { align: "right" });
+  doc.setFont("helvetica", "normal");
+  doc.text("Generated on myalert.in", pageWidth - 14, 23, { align: "right" });
+
   doc.setFillColor(225, 29, 72);
-  doc.rect(12, 46, 2.2, pageHeight - 82, "F");
+  doc.rect(0, 0, 3, pageHeight, "F");
 
   doc.setFillColor(255, 245, 247);
-  doc.roundedRect(12, pageHeight - 29, pageWidth - 24, 21, 5, 5, "F");
+  doc.roundedRect(14, pageHeight - 29, pageWidth - 28, 21, 5, 5, "F");
   doc.setTextColor(15, 23, 42);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
@@ -507,70 +520,103 @@ function buildAlertPdf() {
   const bodySize = bodyLength > 1100 ? 11 : bodyLength > 650 ? 12 : 13;
   drawAlertPdfFrame(doc);
 
-  let y = 61;
+  let y = 52;
+  doc.setTextColor(225, 29, 72);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.text("Alert Bulletin", 20, y);
+  doc.setTextColor(100, 116, 139);
+  doc.setFont("helvetica", "normal");
+  doc.text(context.published, 190, y, { align: "right" });
+  y += 9;
+
   doc.setFillColor(255, 255, 255);
-  doc.roundedRect(20, y - 9, 170, 28, 4, 4, "F");
   doc.setDrawColor(254, 205, 211);
-  doc.roundedRect(20, y - 9, 170, 28, 4, 4);
+  doc.roundedRect(18, y - 4, 174, 34, 5, 5, "FD");
+  doc.setFillColor(255, 245, 247);
+  doc.roundedRect(24, y + 2, 18, 18, 5, 5, "F");
+  doc.setTextColor(225, 29, 72);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  doc.text(initials(context.publisher.name || "MA"), 33, y + 14, { align: "center" });
   doc.setTextColor(15, 23, 42);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(22);
-  y = writeWrappedPdfText(doc, context.publisher.name || "Publisher", 27, y, 156, 8, { maxY: 250 });
+  doc.setFontSize(20);
+  y = writeWrappedPdfText(doc, context.publisher.name || "Publisher", 48, y + 8, 99, 7.5, { maxY: 250 });
 
   doc.setTextColor(100, 116, 139);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
-  doc.text(`${context.publisher.category || "Publisher"} | ${context.publisher.city || context.publisher.location || "MyAlert"}`, 27, y + 2);
+  doc.text(`${context.publisher.category || "Publisher"} | ${context.publisher.city || context.publisher.location || "MyAlert"}`, 48, y + 2);
   if (context.code) {
+    doc.setFillColor(225, 29, 72);
+    doc.roundedRect(155, 66, 29, 10, 4, 4, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.5);
+    doc.text(context.code, 169.5, 72.5, { align: "center" });
     doc.setFillColor(255, 228, 234);
-    doc.roundedRect(147, 54, 36, 10, 4, 4, "F");
+    doc.roundedRect(151, 79, 37, 7, 3, 3, "F");
     doc.setTextColor(225, 29, 72);
-    doc.text(context.code, 165, 60.5, { align: "center" });
+    doc.setFontSize(6.8);
+    doc.text("PUBLISHER CODE", 169.5, 83.8, { align: "center" });
   }
-  y += 18;
+  y = 103;
 
   const topicLabel =
     context.topicTitle.length > 28 ? `${context.topicTitle.slice(0, 25)}...` : context.topicTitle;
   const topicWidth = Math.min(82, Math.max(38, doc.getTextWidth(topicLabel) + 11));
   doc.setFillColor(255, 228, 234);
-  doc.roundedRect(22, y - 6, topicWidth, 10, 4, 4, "F");
+  doc.roundedRect(20, y - 6, topicWidth, 10, 4, 4, "F");
   doc.setTextColor(225, 29, 72);
+  doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
-  doc.text(topicLabel, 26, y + 1);
-  doc.setTextColor(100, 116, 139);
-  doc.text(context.published, 188, y + 1, { align: "right" });
-  y += 18;
+  doc.text(topicLabel, 24, y + 1);
+  y += 14;
 
+  const titleLines = doc.splitTextToSize(context.title, 166);
+  const bodyLines = doc.splitTextToSize(context.body, 166);
+  const contentHeight = Math.min(118, Math.max(58, titleLines.length * 9 + bodyLines.length * (bodySize + 1) + 22));
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(254, 205, 211);
+  doc.roundedRect(18, y - 5, 174, contentHeight, 5, 5, "FD");
+  doc.setFillColor(225, 29, 72);
+  doc.rect(18, y - 5, 2.5, contentHeight, "F");
   doc.setTextColor(15, 23, 42);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(titleSize);
-  y = writeWrappedPdfText(doc, context.title, 22, y, 166, titleSize > 22 ? 10 : 8, { maxY: 250 });
+  y = writeWrappedPdfText(doc, context.title, 27, y + 10, 156, titleSize > 22 ? 10 : 8, { maxY: 250 });
   y += 5;
 
   doc.setTextColor(71, 85, 105);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(bodySize);
-  y = writeWrappedPdfText(doc, context.body, 22, y, 166, bodySize + 2, { maxY: 250 });
-  y += 10;
+  y = writeWrappedPdfText(doc, context.body, 27, y, 156, bodySize + 2, { maxY: 250 });
+  y = Math.max(y + 14, 117 + contentHeight);
 
+  const followTop = y;
+  doc.setFillColor(255, 247, 249);
   doc.setDrawColor(254, 205, 211);
-  doc.line(22, y, 188, y);
-  y += 9;
-
+  doc.roundedRect(18, followTop, 174, 32, 5, 5, "FD");
   doc.setTextColor(15, 23, 42);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
-  doc.text("Follow this publisher", 22, y);
-  y += 7;
+  doc.text("Follow this publisher", 27, followTop + 10);
   doc.setTextColor(71, 85, 105);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10.5);
   const followText = context.code
     ? `Use publisher code ${context.code} on myalert.in to receive future alerts.`
     : "Open myalert.in to receive future alerts from this publisher.";
-  y = writeWrappedPdfText(doc, followText, 22, y, 166, 6, { maxY: 250 });
+  writeWrappedPdfText(doc, followText, 27, followTop + 18, 108, 5.5, { maxY: followTop + 28 });
+  doc.setFillColor(225, 29, 72);
+  doc.roundedRect(146, followTop + 11, 34, 11, 4, 4, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.text("Open MyAlert", 163, followTop + 18, { align: "center" });
+  doc.link(146, followTop + 11, 34, 11, { url: context.url });
   doc.setTextColor(225, 29, 72);
-  doc.textWithLink("Open MyAlert", 22, y + 4, { url: context.url });
   return { doc, context };
 }
 
