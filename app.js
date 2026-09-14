@@ -30,7 +30,7 @@ const state = {
   publisherFocusPending: false,
   qrOpen: false,
   qrError: "",
-  whatsappOpen: false,
+  whatsappOpen: true,
   whatsappName: "",
   whatsappPhone: "",
   whatsappConsent: false,
@@ -1299,6 +1299,7 @@ function browserCard(canContinue) {
 }
 
 function whatsappCard(canContinue, publisherName) {
+  state.whatsappOpen = true;
   const phone = normalizePhone(state.whatsappPhone);
   const verified = !!phone && state.whatsappVerifiedPhone === phone;
   const cooldown = otpCooldownSeconds();
@@ -1311,11 +1312,7 @@ function whatsappCard(canContinue, publisherName) {
           <p class="section-subtitle">Receive the selected alerts on WhatsApp.</p>
         </div>
       </div>
-      <label class="consent">
-        <input type="checkbox" data-whatsapp-toggle ${state.whatsappOpen ? "checked" : ""} />
-        <span>I want WhatsApp alerts</span>
-      </label>
-      <div class="${state.whatsappOpen ? "" : "hidden"}" style="display: grid; gap: 12px;">
+      <div style="display: grid; gap: 12px;">
         <div class="field">
           <label>Your Name *</label>
           <input class="input" data-wa-name value="${escapeHtml(state.whatsappName)}" placeholder="Your name" />
@@ -1375,7 +1372,7 @@ function summaryCard(selectedTopics, canContinue) {
         ? "Browser Push on"
         : "Browser Push on submit"
       : "",
-    state.whatsappOpen ? "WhatsApp" : "",
+    "WhatsApp",
   ].filter(Boolean);
   return `
     <article class="summary-card">
@@ -1433,12 +1430,10 @@ async function saveSubscription(subscription) {
   if (subscription) {
     body.browserPush = subscription.toJSON();
   }
-  if (state.whatsappOpen) {
-    if (!validateWhatsapp()) return;
-    body.displayName = state.whatsappName.trim();
-    body.phoneNumber = normalizePhone(state.whatsappPhone);
-    body.whatsappOptIn = { enabled: true };
-  }
+  if (!validateWhatsapp()) return;
+  body.displayName = state.whatsappName.trim();
+  body.phoneNumber = normalizePhone(state.whatsappPhone);
+  body.whatsappOptIn = { enabled: true };
   await fetchJson(`${API_BASE}/api/myalert-publisher-notifications/public/subscriptions`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -1446,8 +1441,8 @@ async function saveSubscription(subscription) {
   });
   const savedContact = getSavedContact();
   saveSavedContact({
-    displayName: state.whatsappOpen ? state.whatsappName.trim() : savedContact.displayName,
-    phoneNumber: state.whatsappOpen ? normalizePhone(state.whatsappPhone) : savedContact.phoneNumber,
+    displayName: state.whatsappName.trim() || savedContact.displayName,
+    phoneNumber: normalizePhone(state.whatsappPhone) || savedContact.phoneNumber,
     verifiedWhatsAppPhone: state.whatsappVerifiedPhone || savedContact.verifiedWhatsAppPhone,
     verifiedWhatsAppName:
       state.whatsappVerifiedPhone === normalizePhone(state.whatsappPhone)
@@ -1661,6 +1656,7 @@ async function verifyWhatsAppOtp() {
 }
 
 async function savePreferences() {
+  state.whatsappOpen = true;
   if (state.selectedTopicIds.size === 0) {
     toast("Select at least one topic.");
     return;
@@ -1676,10 +1672,6 @@ async function savePreferences() {
   const subscription = await prepareBrowserSubscription();
   if (subscription) {
     state.browserEnabled = true;
-  }
-  if (!subscription && !state.whatsappOpen) {
-    toast("Enable browser notifications or WhatsApp alerts first.");
-    return;
   }
   await saveSubscription(subscription);
   state.subscriptionsLoaded = false;
@@ -2412,10 +2404,6 @@ function bindEvents() {
   document.querySelector("[data-api-request-home]")?.addEventListener("click", () => {
     clearApiRequestDialog();
     routeTo("/");
-  });
-  document.querySelector("[data-whatsapp-toggle]")?.addEventListener("change", (event) => {
-    state.whatsappOpen = event.target.checked;
-    render();
   });
   document.querySelector("[data-wa-name]")?.addEventListener("input", (event) => {
     state.whatsappName = event.target.value;
