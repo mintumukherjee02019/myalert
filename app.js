@@ -11,6 +11,7 @@ const state = {
   filters: ["All"],
   publishers: [],
   subscriptions: [],
+  myAlertsSearch: "",
   updates: [],
   publisherPosts: [],
   alertDetail: null,
@@ -46,6 +47,8 @@ const state = {
   apiRequestSent: false,
   apiRequestError: "",
   apiRequestRedirectUntil: 0,
+  subscriptionActionBusy: false,
+  actionDialog: null,
   loading: false,
   loadingPublishers: false,
   loadingSubscriptions: false,
@@ -193,6 +196,20 @@ function toast(message) {
   el.textContent = message;
   el.classList.add("show");
   window.setTimeout(() => el.classList.remove("show"), 2800);
+}
+
+function showActionDialog(kind, title, message) {
+  state.actionDialog = {
+    kind: kind === "error" ? "error" : "success",
+    title,
+    message,
+  };
+  render();
+}
+
+function closeActionDialog() {
+  state.actionDialog = null;
+  render();
 }
 
 function otpCooldownSeconds() {
@@ -416,7 +433,7 @@ function footer() {
 }
 
 function appShell(content, active = "") {
-  return `<div class="page">${header(active)}<main>${content}</main>${footer()}${qrScannerModal()}${apiRequestSentDialog()}</div>`;
+  return `<div class="page">${header(active)}<main>${content}</main>${footer()}${qrScannerModal()}${apiRequestSentDialog()}${actionDialog()}</div>`;
 }
 
 function qrScannerModal() {
@@ -452,6 +469,21 @@ function apiRequestSentDialog() {
         <p>We have received your API request. Our team will contact you shortly.</p>
         <p class="small-text redirect-countdown">Redirecting to home in <strong data-api-request-countdown>10</strong> seconds.</p>
         <button class="primary-btn" type="button" data-api-request-home>Back to Home</button>
+      </section>
+    </div>
+  `;
+}
+
+function actionDialog() {
+  if (!state.actionDialog) return "";
+  const isError = state.actionDialog.kind === "error";
+  return `
+    <div class="modal-backdrop open">
+      <section class="qr-modal action-modal ${isError ? "error" : "success"}" role="dialog" aria-modal="true" aria-labelledby="action-dialog-title">
+        <div class="action-modal-icon">${isError ? icons.close : icons.check}</div>
+        <h2 id="action-dialog-title">${escapeHtml(state.actionDialog.title)}</h2>
+        <p>${escapeHtml(state.actionDialog.message)}</p>
+        <button class="primary-btn" type="button" data-action-dialog-close>OK</button>
       </section>
     </div>
   `;
@@ -1768,6 +1800,21 @@ function myAlertsPage() {
   if (!state.loadingSubscriptions && !state.subscriptionsLoaded && !state.error) {
     setTimeout(() => fetchPublicSubscriptions(), 0);
   }
+  const searchTerm = state.myAlertsSearch.trim().toLowerCase();
+  const visibleSubscriptions = state.subscriptions.filter((item) => {
+    if (!searchTerm) return true;
+    const publisher = normalizePublisher(item.partner || {});
+    const haystack = [
+      publisher.name,
+      publisher.category,
+      publisher.location,
+      item.phoneNumber,
+      ...(item.topics || []).map((topic) => `${topic.title} ${topic.description || ""}`),
+    ]
+      .join(" ")
+      .toLowerCase();
+    return haystack.includes(searchTerm);
+  });
   return appShell(
     `
       <section class="section">
@@ -1776,19 +1823,29 @@ function myAlertsPage() {
           <p class="page-subtitle">Manage who can notify you and what you receive.</p>
           <div class="filter-panel" style="margin-top: 18px;">
             <div class="field">
+              <label>Search My Alerts</label>
+              <input class="input" data-my-alerts-search value="${escapeHtml(
+                state.myAlertsSearch
+              )}" placeholder="Search publisher or topic" />
+            </div>
+            <div class="field">
               <label>WhatsApp number for lookup</label>
               <input class="input" data-lookup-phone value="${escapeHtml(
                 saved.phoneNumber
               )}" inputmode="tel" placeholder="+91 98765 43210" />
             </div>
-            <button class="secondary-btn" data-load-subscriptions>Refresh My Alerts</button>
+            <button class="secondary-btn" data-load-subscriptions ${
+              state.subscriptionActionBusy ? "disabled" : ""
+            }>Refresh My Alerts</button>
           </div>
           <div class="alerts-list" style="margin-top: 20px;">
             ${
               state.loadingSubscriptions
                 ? '<div class="empty">Loading your saved alert preferences...</div>'
+                : visibleSubscriptions.length
+                ? visibleSubscriptions.map(subscriptionCard).join("")
                 : state.subscriptions.length
-                ? state.subscriptions.map(subscriptionCard).join("")
+                ? '<div class="empty">No subscriptions match your search.</div>'
                 : '<div class="empty">No subscriptions found for this device or WhatsApp number.</div>'
             }
           </div>
@@ -1802,13 +1859,14 @@ function myAlertsPage() {
 function subscriptionCard(item) {
   const publisher = normalizePublisher(item.partner || {});
   const whatsappOn = item.whatsappOptIn?.enabled === true;
+  const hasBrowserPush = item.hasBrowserPush === true;
   return `
     <article class="publisher-card subscription-card">
       <div class="publisher-top">
         <div class="avatar">${initials(publisher.name)}</div>
         <div>
           <h3 class="publisher-name">${escapeHtml(publisher.name || "Publisher")} <span class="verified">${icons.check}</span></h3>
-          <div class="publisher-meta">Browser Push: ${item.hasBrowserPush ? "ON" : "OFF"} &bull; WhatsApp: ${
+          <div class="publisher-meta">Browser Push: ${hasBrowserPush ? "ON" : "OFF"} &bull; WhatsApp: ${
     whatsappOn ? "ON" : "OFF"
   }</div>
         </div>
@@ -1817,18 +1875,31 @@ function subscriptionCard(item) {
         ${(item.topics || [])
           .map(
             (topic) => `
-              <div class="toggle-row">
-                <strong>${escapeHtml(topic.title)}</strong>
-                <button class="toggle on" data-topic-toggle data-topic-id="${escapeHtml(topic.id)}" aria-label="Toggle ${escapeHtml(
+              <div class="toggle-row ${topic.enabled === false ? "muted" : ""}">
+                <div>
+                  <strong>${escapeHtml(topic.title || "Topic")}</strong>
+                  <span>${topic.enabled === false ? "Paused" : "Active"}</span>
+                </div>
+                <button class="toggle ${topic.enabled === false ? "" : "on"}" data-subscription-topic-toggle data-subscription-id="${escapeHtml(
+                  item.id
+                )}" data-topic-id="${escapeHtml(topic.id)}" data-topic-enabled="${topic.enabled === false ? "false" : "true"}" aria-label="Toggle ${escapeHtml(
               topic.title
-            )}"></button>
+            )}" ${state.subscriptionActionBusy ? "disabled" : ""}></button>
               </div>`
           )
           .join("")}
       </div>
-      <button class="secondary-btn" data-unsubscribe="${escapeHtml(item.browserPush?.endpoint || "")}" ${
-    item.hasBrowserPush ? "" : "disabled"
+      <div class="subscription-actions">
+        <button class="secondary-btn" data-unsubscribe-mode="browser" data-subscription-id="${escapeHtml(item.id)}" ${
+    hasBrowserPush && !state.subscriptionActionBusy ? "" : "disabled"
   }>Unsubscribe Browser Push</button>
+        <button class="secondary-btn" data-unsubscribe-mode="whatsapp" data-subscription-id="${escapeHtml(item.id)}" ${
+    whatsappOn && !state.subscriptionActionBusy ? "" : "disabled"
+  }>Unsubscribe WhatsApp</button>
+        <button class="secondary-btn danger" data-unsubscribe-mode="all" data-subscription-id="${escapeHtml(item.id)}" ${
+    state.subscriptionActionBusy ? "disabled" : ""
+  }>Remove All</button>
+      </div>
     </article>
   `;
 }
@@ -2104,17 +2175,89 @@ function urlBase64ToUint8Array(base64String) {
   return Uint8Array.from([...rawData].map((char) => char.charCodeAt(0)));
 }
 
-async function unsubscribe(endpoint) {
-  if (!endpoint) return;
-  await fetchJson(`${API_BASE}/api/myalert-publisher-notifications/public/subscriptions`, {
-    method: "DELETE",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ endpoint }),
-  });
+async function getSubscriptionOwnershipPayload() {
+  const saved = getSavedContact();
+  const endpoint = (await getCurrentPushEndpoint()) || saved.lastEndpoint || "";
+  const phoneNumber = normalizePhone(saved.phoneNumber);
+  return { endpoint, phoneNumber };
+}
+
+function findSubscription(subscriptionId) {
+  return state.subscriptions.find((item) => item.id === subscriptionId);
+}
+
+async function refreshSubscriptionsAfterAction() {
   state.subscriptionsLoaded = false;
+  state.updatesLoaded = false;
   await fetchPublicSubscriptions();
-  toast("Subscription removed.");
+}
+
+async function toggleManagedTopic(subscriptionId, topicId, currentlyEnabled) {
+  if (state.subscriptionActionBusy) return;
+  const subscription = findSubscription(subscriptionId);
+  if (!subscription) {
+    showActionDialog("error", "Could not update topic", "This subscription is no longer available on this screen.");
+    return;
+  }
+  state.subscriptionActionBusy = true;
   render();
+  try {
+    const ownership = await getSubscriptionOwnershipPayload();
+    const payload = await fetchJson(
+      `${API_BASE}/api/myalert-publisher-notifications/public/subscriptions/${encodeURIComponent(subscriptionId)}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...ownership,
+          topicId,
+          enabled: !currentlyEnabled,
+        }),
+      }
+    );
+    await refreshSubscriptionsAfterAction();
+    state.subscriptionActionBusy = false;
+    showActionDialog("success", "Preference updated", payload.message || "Your topic preference was saved.");
+  } catch (error) {
+    state.subscriptionActionBusy = false;
+    render();
+    showActionDialog("error", "Could not update topic", error.message || "Please try again.");
+  }
+}
+
+async function unsubscribeSubscription(subscriptionId, mode = "all") {
+  if (state.subscriptionActionBusy) return;
+  const subscription = findSubscription(subscriptionId);
+  if (!subscription) {
+    showActionDialog("error", "Could not unsubscribe", "This subscription is no longer available on this screen.");
+    return;
+  }
+  state.subscriptionActionBusy = true;
+  render();
+  try {
+    const ownership = await getSubscriptionOwnershipPayload();
+    const payload = await fetchJson(`${API_BASE}/api/myalert-publisher-notifications/public/subscriptions`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...ownership,
+        subscriberId: subscriptionId,
+        mode,
+      }),
+    });
+    if (mode === "browser" || mode === "all") {
+      const registration = await navigator.serviceWorker?.getRegistration?.();
+      const pushSubscription = await registration?.pushManager?.getSubscription?.();
+      await pushSubscription?.unsubscribe?.().catch(() => {});
+    }
+    await refreshSubscriptionsAfterAction();
+    state.subscriptionActionBusy = false;
+    showActionDialog("success", "Unsubscribed", payload.message || "Your alert preference was updated.");
+  } catch (error) {
+    state.subscriptionActionBusy = false;
+    render();
+    showActionDialog("error", "Could not unsubscribe", error.message || "Please try again.");
+  }
 }
 
 function render() {
@@ -2187,6 +2330,7 @@ function bindEvents() {
       () => toast("Copy this alert link from your browser address bar.")
     );
   });
+  document.querySelector("[data-action-dialog-close]")?.addEventListener("click", closeActionDialog);
   document.querySelector("[data-menu-open]")?.addEventListener("click", openMenu);
   document.querySelectorAll("[data-menu-close]").forEach((el) => el.addEventListener("click", closeMenu));
   document.querySelector("[data-search-input]")?.addEventListener("input", (event) => {
@@ -2195,6 +2339,10 @@ function bindEvents() {
     state.publishersLoaded = false;
     window.clearTimeout(searchTimer);
     searchTimer = window.setTimeout(() => fetchPublicPublishers(state.search), 300);
+  });
+  document.querySelector("[data-my-alerts-search]")?.addEventListener("input", (event) => {
+    state.myAlertsSearch = event.target.value;
+    render();
   });
   document.querySelectorAll("[data-category]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -2321,8 +2469,23 @@ function bindEvents() {
       toast(error.message || "Could not load sent alerts.")
     );
   });
-  document.querySelectorAll("[data-unsubscribe]").forEach((button) => {
-    button.addEventListener("click", () => unsubscribe(button.dataset.unsubscribe));
+  document.querySelectorAll("[data-subscription-topic-toggle]").forEach((button) => {
+    button.addEventListener("click", () => {
+      toggleManagedTopic(
+        button.dataset.subscriptionId,
+        button.dataset.topicId,
+        button.dataset.topicEnabled !== "false"
+      ).catch((error) =>
+        showActionDialog("error", "Could not update topic", error.message || "Please try again.")
+      );
+    });
+  });
+  document.querySelectorAll("[data-unsubscribe-mode]").forEach((button) => {
+    button.addEventListener("click", () => {
+      unsubscribeSubscription(button.dataset.subscriptionId, button.dataset.unsubscribeMode).catch((error) =>
+        showActionDialog("error", "Could not unsubscribe", error.message || "Please try again.")
+      );
+    });
   });
 }
 

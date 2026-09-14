@@ -1457,6 +1457,41 @@ a {
   width: 100%;
 }
 
+.action-modal {
+  justify-items: center;
+  text-align: center;
+}
+
+.action-modal-icon {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: var(--success);
+  border-radius: 999px;
+}
+
+.action-modal.error .action-modal-icon {
+  background: var(--error);
+}
+
+.action-modal h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1.35rem;
+}
+
+.action-modal p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.action-modal .primary-btn {
+  width: 100%;
+}
+
 .success-page {
   min-height: calc(100vh - 170px);
   display: grid;
@@ -1560,6 +1595,21 @@ a {
   border-top: 1px solid var(--line);
 }
 
+.toggle-row > div {
+  display: grid;
+  gap: 3px;
+}
+
+.toggle-row span {
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.toggle-row.muted strong {
+  color: var(--muted);
+}
+
 .toggle {
   width: 48px;
   height: 28px;
@@ -1587,6 +1637,23 @@ a {
 
 .toggle.on::after {
   transform: translateX(20px);
+}
+
+.toggle:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.subscription-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.secondary-btn.danger {
+  color: var(--error);
+  border-color: #fecdd3;
+  background: #fff5f7;
 }
 
 .history-card {
