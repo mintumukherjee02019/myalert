@@ -12,8 +12,10 @@ const state = {
   publishers: [],
   subscriptions: [],
   updates: [],
+  publisherPosts: [],
   publisher: null,
   publisherIdentifier: "",
+  publisherTab: "topics",
   topics: [],
   webPush: { enabled: false, publicKey: "" },
   selectedTopicIds: new Set(),
@@ -44,9 +46,14 @@ const state = {
   loadingPublishers: false,
   loadingSubscriptions: false,
   loadingUpdates: false,
+  loadingPublisherPosts: false,
   publishersLoaded: false,
   subscriptionsLoaded: false,
   updatesLoaded: false,
+  publisherPostsLoaded: false,
+  publisherPostsHasMore: true,
+  publisherPostsOffset: 0,
+  publisherPostsError: "",
   error: "",
 };
 
@@ -84,6 +91,10 @@ const icons = {
     '<svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>',
   history:
     '<svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg>',
+  posts:
+    '<svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>',
+  pin:
+    '<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m12 17-5 5"/><path d="M9 10 4 5l1-1 5 5"/><path d="m14 4 6 6"/><path d="m8 14 8-8"/><path d="M15 9 9 15"/></svg>',
   shield:
     '<svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.7 8.9a1 1 0 0 1-.6 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.7a1.2 1.2 0 0 1 1.6 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z"/></svg>',
 };
@@ -229,6 +240,29 @@ function initials(name) {
     .toUpperCase();
 }
 
+function resetPublisherPosts() {
+  state.publisherPosts = [];
+  state.publisherPostsLoaded = false;
+  state.publisherPostsHasMore = true;
+  state.publisherPostsOffset = 0;
+  state.publisherPostsError = "";
+}
+
+function formatPostTime(value) {
+  if (!value) return "Just now";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Just now";
+  const diff = Date.now() - date.getTime();
+  const minute = 60 * 1000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+  if (diff < minute) return "Just now";
+  if (diff < hour) return `${Math.max(1, Math.floor(diff / minute))} min ago`;
+  if (diff < day) return `${Math.max(1, Math.floor(diff / hour))} hours ago`;
+  if (diff < 7 * day) return `${Math.max(1, Math.floor(diff / day))} days ago`;
+  return date.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+}
+
 function routeTo(path) {
   history.pushState({}, "", path);
   syncRoute();
@@ -248,6 +282,24 @@ function maybeLoadMoreHomePublishers() {
   if (rect.top > window.innerHeight + 180) return;
   state.homeVisiblePublishers += 5;
   render();
+}
+
+function maybeLoadMorePublisherPosts() {
+  if (state.publisherTab !== "posts" || state.loadingPublisherPosts || !state.publisherPostsHasMore) {
+    return;
+  }
+  const marker = document.querySelector("[data-publisher-posts-load-more]");
+  if (!marker) return;
+  const rect = marker.getBoundingClientRect();
+  if (rect.top > window.innerHeight + 180) return;
+  fetchPublisherPosts().catch((error) =>
+    toast(error.message || "Could not load more publisher posts.")
+  );
+}
+
+function handleScrollLoaders() {
+  maybeLoadMoreHomePublishers();
+  maybeLoadMorePublisherPosts();
 }
 
 async function fetchPublicPublishers(query = "") {
@@ -548,6 +600,10 @@ function publisherCard(publisher) {
 async function fetchPublisher(identifier) {
   state.loading = true;
   state.error = "";
+  if (state.publisherIdentifier !== identifier) {
+    resetPublisherPosts();
+    state.publisherTab = "topics";
+  }
   state.publisherIdentifier = identifier;
   render();
   try {
@@ -577,6 +633,52 @@ async function fetchPublisher(identifier) {
     state.error = error.message || "Publisher not found.";
   } finally {
     state.loading = false;
+    render();
+  }
+}
+
+async function fetchPublisherPosts({ reset = false } = {}) {
+  if (!state.publisher || state.loadingPublisherPosts) return;
+  if (!reset && !state.publisherPostsHasMore) return;
+  if (reset) {
+    resetPublisherPosts();
+  }
+  state.loadingPublisherPosts = true;
+  state.publisherPostsError = "";
+  render();
+  try {
+    const identifier =
+      state.publisher.publicSlug ||
+      state.publisher.slug ||
+      state.publisher.publicCode ||
+      state.publisherIdentifier ||
+      state.publisher.id;
+    const url = new URL(
+      `${API_BASE}/api/myalert-publisher-notifications/public/partners/${encodeURIComponent(
+        identifier
+      )}/updates`
+    );
+    url.searchParams.set("limit", "5");
+    url.searchParams.set("offset", String(state.publisherPostsOffset));
+    const payload = await fetchJson(url.toString());
+    const nextUpdates = payload.updates || [];
+    const merged = reset ? nextUpdates : [...state.publisherPosts, ...nextUpdates];
+    const seen = new Set();
+    state.publisherPosts = merged.filter((item) => {
+      const id = item.id || `${item.title}-${item.sentAt || item.createdAt}`;
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+    state.publisherPostsLoaded = true;
+    state.publisherPostsHasMore = payload.hasMore === true;
+    state.publisherPostsOffset =
+      Number(payload.nextOffset) || state.publisherPostsOffset + nextUpdates.length;
+  } catch (error) {
+    state.publisherPostsError = error.message || "Could not load publisher posts.";
+    state.publisherPostsLoaded = true;
+  } finally {
+    state.loadingPublisherPosts = false;
     render();
   }
 }
@@ -743,10 +845,19 @@ function publisherPage() {
   const publisher = state.publisher;
   const selectedTopics = state.topics.filter((topic) => state.selectedTopicIds.has(topic.id));
   const canContinue = selectedTopics.length > 0;
+  const activeTab = state.publisherTab === "posts" ? "posts" : "topics";
+  if (
+    activeTab === "posts" &&
+    !state.publisherPostsLoaded &&
+    !state.loadingPublisherPosts &&
+    !state.publisherPostsError
+  ) {
+    setTimeout(() => fetchPublisherPosts({ reset: true }), 0);
+  }
   return appShell(
     `
       <section class="section">
-        <div class="shell publisher-layout">
+        <div class="shell publisher-layout ${activeTab === "posts" ? "posts-mode" : ""}">
           <div>
             <a href="/" class="back-link" data-link>${icons.arrow} Back</a>
             <section class="publisher-identity">
@@ -768,37 +879,132 @@ function publisherPage() {
                   "Important updates, alerts and announcements from this publisher."
               )}</p>
             </section>
-            <section class="section">
-              <div class="section-head">
-                <div>
-                  <h2 class="section-title">Choose what you want to receive</h2>
-                  <p class="section-subtitle">You can change these anytime.</p>
-                </div>
-              </div>
-              <div class="topics-list topic-grid">
-                ${
-                  state.topics.length
-                    ? state.topics.map(topicCard).join("")
-                    : '<div class="empty">This publisher has not added alert topics yet.</div>'
-                }
-              </div>
-            </section>
+            ${publisherTabs(activeTab)}
+            ${
+              activeTab === "posts"
+                ? publisherPostsSection(publisher)
+                : `<section class="section">
+                    <div class="section-head">
+                      <div>
+                        <h2 class="section-title">Choose what you want to receive</h2>
+                        <p class="section-subtitle">You can change these anytime.</p>
+                      </div>
+                    </div>
+                    <div class="topics-list topic-grid">
+                      ${
+                        state.topics.length
+                          ? state.topics.map(topicCard).join("")
+                          : '<div class="empty">This publisher has not added alert topics yet.</div>'
+                      }
+                    </div>
+                  </section>`
+            }
           </div>
-          <aside>
-            <section class="section" style="padding-top: 54px;">
-              <h2 class="section-title">How would you like to receive alerts?</h2>
-              <p class="section-subtitle">Choose one or both.</p>
-              <div class="delivery-list" style="margin-top: 14px;">
-                ${browserCard(canContinue)}
-                ${whatsappCard(canContinue, publisher.name || "this publisher")}
-                ${summaryCard(selectedTopics, canContinue)}
-              </div>
-            </section>
-          </aside>
+          ${
+            activeTab === "topics"
+              ? `<aside>
+                  <section class="section" style="padding-top: 54px;">
+                    <h2 class="section-title">How would you like to receive alerts?</h2>
+                    <p class="section-subtitle">Choose one or both.</p>
+                    <div class="delivery-list" style="margin-top: 14px;">
+                      ${browserCard(canContinue)}
+                      ${whatsappCard(canContinue, publisher.name || "this publisher")}
+                      ${summaryCard(selectedTopics, canContinue)}
+                    </div>
+                  </section>
+                </aside>`
+              : ""
+          }
         </div>
       </section>
     `
   );
+}
+
+function publisherTabs(activeTab) {
+  return `
+    <div class="publisher-tabs" role="tablist" aria-label="Publisher sections">
+      <button class="publisher-tab ${activeTab === "topics" ? "active" : ""}" type="button" data-publisher-tab="topics" role="tab" aria-selected="${
+        activeTab === "topics"
+      }">
+        ${icons.bell}
+        <span>Topics</span>
+      </button>
+      <button class="publisher-tab ${activeTab === "posts" ? "active" : ""}" type="button" data-publisher-tab="posts" role="tab" aria-selected="${
+        activeTab === "posts"
+      }">
+        ${icons.posts}
+        <span>All Posts</span>
+        <small>Latest posts</small>
+      </button>
+    </div>
+  `;
+}
+
+function publisherPostsSection(publisher) {
+  const posts = state.publisherPosts || [];
+  return `
+    <section class="section publisher-posts-section">
+      <div class="posts-head">
+        <div>
+          <h2 class="section-title">Recent updates</h2>
+          <p class="section-subtitle">All alerts and announcements from this publisher.</p>
+        </div>
+      </div>
+      <div class="publisher-posts-list">
+        ${
+          state.publisherPostsError
+            ? `<div class="empty">${escapeHtml(state.publisherPostsError)}</div>`
+            : posts.length
+            ? posts.map(publisherPostCard).join("")
+            : state.loadingPublisherPosts
+            ? '<div class="empty">Loading latest posts...</div>'
+            : '<div class="empty">No sent posts are available for this publisher yet.</div>'
+        }
+      </div>
+      ${
+        state.publisherPostsHasMore
+          ? `<div class="lazy-load-status" data-publisher-posts-load-more>
+              <span class="loader-dot"></span>
+              <span>${state.loadingPublisherPosts ? "Loading more posts..." : "Scroll to load more posts"}</span>
+            </div>`
+          : posts.length
+          ? `<div class="posts-end">
+              <img src="/assets/share/myalert-preview.png" alt="" />
+              <strong>You are all caught up</strong>
+              <span>End of posts from this publisher.</span>
+            </div>`
+          : ""
+      }
+    </section>
+  `;
+}
+
+function publisherPostCard(update, index) {
+  const topic = update.topics?.[0] || {};
+  const topicTitle = topic.title || "General";
+  const title = update.title || topicTitle || "Alert update";
+  const body = update.body || "This update was sent by the publisher.";
+  const time = formatPostTime(update.sentAt || update.createdAt);
+  const imageUrl = update.generatedImage?.url || update.imageUrl || "";
+  const pinned = index === 0 && update.priority === "high";
+  return `
+    <article class="publisher-post-card">
+      <div class="post-icon">
+        ${imageUrl ? `<img src="${escapeHtml(imageUrl)}" alt="" loading="lazy" />` : icons.bell}
+      </div>
+      <div class="post-content">
+        <div class="post-meta-row">
+          <span class="post-chip">${escapeHtml(topicTitle)}</span>
+          ${pinned ? `<span class="post-pin">${icons.pin} Pinned</span>` : ""}
+          <span class="post-time">${escapeHtml(time)}</span>
+        </div>
+        <h3>${escapeHtml(title)}</h3>
+        <p>${escapeHtml(body)}</p>
+      </div>
+      <span class="post-arrow">${icons.chevron}</span>
+    </article>
+  `;
 }
 
 function topicCard(topic) {
@@ -1746,7 +1952,7 @@ function render() {
   document.getElementById("app").innerHTML = html;
   bindEvents();
   focusPublisherWhatsappFields();
-  window.setTimeout(maybeLoadMoreHomePublishers, 80);
+  window.setTimeout(handleScrollLoaders, 80);
 }
 
 function bindEvents() {
@@ -1790,6 +1996,19 @@ function bindEvents() {
   document.querySelector("[data-select-all]")?.addEventListener("click", () => {
     state.selectedTopicIds = new Set(state.topics.map((topic) => topic.id));
     render();
+  });
+  document.querySelectorAll("[data-publisher-tab]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const nextTab = button.dataset.publisherTab === "posts" ? "posts" : "topics";
+      if (state.publisherTab === nextTab) return;
+      state.publisherTab = nextTab;
+      render();
+      if (nextTab === "posts" && !state.publisherPostsLoaded) {
+        fetchPublisherPosts({ reset: true }).catch((error) =>
+          toast(error.message || "Could not load publisher posts.")
+        );
+      }
+    });
   });
   document.querySelectorAll("[data-topic-id]").forEach((input) => {
     if (input.type !== "checkbox") return;
@@ -1915,7 +2134,7 @@ function closeMenu() {
 }
 
 window.addEventListener("popstate", syncRoute);
-window.addEventListener("scroll", maybeLoadMoreHomePublishers, { passive: true });
+window.addEventListener("scroll", handleScrollLoaders, { passive: true });
 document.addEventListener("DOMContentLoaded", () => {
   const pendingRoute = sessionStorage.getItem("myalert_pending_route");
   if (pendingRoute) {
