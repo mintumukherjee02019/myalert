@@ -426,48 +426,42 @@ function writeWrappedPdfText(doc, text, x, y, maxWidth, lineHeight, options = {}
   return y;
 }
 
-function drawPdfDownloadBadge(doc, x, y, width, label, sublabel, url) {
-  const height = 13;
-  doc.setFillColor(15, 23, 42);
+function drawPdfDownloadBadge(doc, x, y, width, platform, url) {
+  const isIos = platform === "ios";
+  const height = 13.5;
+  doc.setFillColor(5, 5, 5);
   doc.roundedRect(x, y, width, height, 3, 3, "F");
-  doc.setDrawColor(225, 29, 72);
+  doc.setDrawColor(52, 52, 52);
   doc.setLineWidth(0.25);
   doc.roundedRect(x, y, width, height, 3, 3);
+  doc.setFillColor(255, 255, 255);
+  if (isIos) {
+    doc.ellipse(x + 7.5, y + 7.1, 2.4, 3.1, "F");
+    doc.circle(x + 9.1, y + 4.2, 0.9, "F");
+  } else {
+    doc.triangle(x + 5.2, y + 3, x + 5.2, y + 10.6, x + 12, y + 6.8, "F");
+  }
   doc.setTextColor(255, 255, 255);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(9.5);
-  doc.text(label, x + 14, y + 5.4);
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(6.8);
-  doc.text(sublabel, x + 14, y + 9.8);
-  doc.setDrawColor(255, 255, 255);
-  doc.setLineWidth(0.8);
-  doc.line(x + 6.5, y + 3.2, x + 6.5, y + 8.6);
-  doc.line(x + 4.6, y + 6.9, x + 6.5, y + 8.8);
-  doc.line(x + 8.4, y + 6.9, x + 6.5, y + 8.8);
-  doc.line(x + 4.5, y + 10.4, x + 8.5, y + 10.4);
+  doc.setFontSize(5.4);
+  doc.text(isIos ? "Download on the" : "GET IT ON", x + 15, y + 4.8);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(isIos ? 8.5 : 8);
+  doc.text(isIos ? "App Store" : "Google Play", x + 15, y + 10);
   doc.link(x, y, width, height, { url });
 }
 
-function drawMyAlertPdfLogo(doc, x, y) {
-  doc.setFillColor(225, 29, 72);
-  doc.roundedRect(x, y, 15, 15, 4, 4, "F");
-  doc.setDrawColor(255, 255, 255);
-  doc.setLineWidth(1.2);
-  doc.ellipse(x + 7.5, y + 7.4, 3.6, 4.1, "S");
-  doc.line(x + 4.3, y + 11.1, x + 10.7, y + 11.1);
-  doc.setFillColor(255, 255, 255);
-  doc.circle(x + 7.5, y + 12.4, 0.8, "F");
+function drawMyAlertPdfWordmark(doc, x, y) {
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(18);
+  doc.setFontSize(19);
   doc.setTextColor(15, 23, 42);
-  doc.text("My", x + 20, y + 7.2);
+  doc.text("My", x, y);
   doc.setTextColor(225, 29, 72);
-  doc.text("Alert", x + 30, y + 7.2);
+  doc.text("Alert", x + 10.5, y);
   doc.setTextColor(100, 116, 139);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.2);
-  doc.text("Get only the alerts you choose.", x + 20, y + 13.3);
+  doc.text("Get only the alerts you choose.", x, y + 8);
 }
 
 function drawAlertPdfFrame(doc) {
@@ -479,7 +473,7 @@ function drawAlertPdfFrame(doc) {
   doc.rect(0, 0, pageWidth, 36, "F");
   doc.setFillColor(255, 228, 234);
   doc.circle(pageWidth - 20, 10, 22, "F");
-  drawMyAlertPdfLogo(doc, 14, 10);
+  drawMyAlertPdfWordmark(doc, 15, 18);
 
   doc.setDrawColor(254, 205, 211);
   doc.setLineWidth(0.25);
@@ -504,8 +498,8 @@ function drawAlertPdfFrame(doc) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7.5);
   doc.text("Create and send trusted community alerts.", 18, pageHeight - 14);
-  drawPdfDownloadBadge(doc, pageWidth - 95, pageHeight - 25, 36, "Android", "Download app", MYALERT_ANDROID_DOWNLOAD_URL);
-  drawPdfDownloadBadge(doc, pageWidth - 54, pageHeight - 25, 36, "iOS", "Download app", MYALERT_IOS_DOWNLOAD_URL);
+  drawPdfDownloadBadge(doc, pageWidth - 101, pageHeight - 25.5, 41, "android", MYALERT_ANDROID_DOWNLOAD_URL);
+  drawPdfDownloadBadge(doc, pageWidth - 55, pageHeight - 25.5, 41, "ios", MYALERT_IOS_DOWNLOAD_URL);
 }
 
 function buildAlertPdf() {
