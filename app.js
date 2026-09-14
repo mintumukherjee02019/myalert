@@ -13,6 +13,10 @@ const state = {
   subscriptions: [],
   updates: [],
   publisherPosts: [],
+  alertDetail: null,
+  alertDetailPublisher: null,
+  alertDetailId: "",
+  alertDetailPublisherIdentifier: "",
   publisher: null,
   publisherIdentifier: "",
   publisherTab: "topics",
@@ -47,6 +51,7 @@ const state = {
   loadingSubscriptions: false,
   loadingUpdates: false,
   loadingPublisherPosts: false,
+  loadingAlertDetail: false,
   publishersLoaded: false,
   subscriptionsLoaded: false,
   updatesLoaded: false,
@@ -54,6 +59,7 @@ const state = {
   publisherPostsHasMore: true,
   publisherPostsOffset: 0,
   publisherPostsError: "",
+  alertDetailError: "",
   error: "",
 };
 
@@ -95,6 +101,14 @@ const icons = {
     '<svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>',
   pin:
     '<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m12 17-5 5"/><path d="M9 10 4 5l1-1 5 5"/><path d="m14 4 6 6"/><path d="m8 14 8-8"/><path d="M15 9 9 15"/></svg>',
+  calendar:
+    '<svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4M16 2v4M3 10h18"/><rect x="3" y="4" width="18" height="18" rx="2"/></svg>',
+  clock:
+    '<svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  share:
+    '<svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="m16 6-4-4-4 4"/><path d="M12 2v13"/></svg>',
+  bookmark:
+    '<svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21 12 17 5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>',
   shield:
     '<svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.7 8.9a1 1 0 0 1-.6 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.7a1.2 1.2 0 0 1 1.6 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z"/></svg>',
 };
@@ -602,7 +616,7 @@ async function fetchPublisher(identifier) {
   state.error = "";
   if (state.publisherIdentifier !== identifier) {
     resetPublisherPosts();
-    state.publisherTab = "topics";
+    state.publisherTab = state.query.get("tab") === "posts" ? "posts" : "topics";
   }
   state.publisherIdentifier = identifier;
   render();
@@ -679,6 +693,33 @@ async function fetchPublisherPosts({ reset = false } = {}) {
     state.publisherPostsLoaded = true;
   } finally {
     state.loadingPublisherPosts = false;
+    render();
+  }
+}
+
+async function fetchAlertDetail(publisherIdentifier, alertId) {
+  state.loadingAlertDetail = true;
+  state.alertDetailError = "";
+  state.alertDetailPublisherIdentifier = publisherIdentifier;
+  state.alertDetailId = alertId;
+  render();
+  try {
+    const payload = await fetchJson(
+      `${API_BASE}/api/myalert-publisher-notifications/public/partners/${encodeURIComponent(
+        publisherIdentifier
+      )}/updates/${encodeURIComponent(alertId)}`
+    );
+    state.alertDetailPublisher = normalizePublisher(payload.partner || {});
+    state.alertDetail = payload.update || null;
+    if (!state.alertDetail) {
+      throw new Error("Alert not found.");
+    }
+  } catch (error) {
+    state.alertDetailError = error.message || "Could not load alert details.";
+    state.alertDetail = null;
+    state.alertDetailPublisher = null;
+  } finally {
+    state.loadingAlertDetail = false;
     render();
   }
 }
@@ -816,6 +857,32 @@ function currentPublisherIdentifier() {
   return bare || "";
 }
 
+function currentAlertRoute() {
+  const match = state.route.match(/^\/p\/([^/]+)\/alerts\/([^/?#]+)/);
+  if (!match) return null;
+  return {
+    publisherIdentifier: decodeURIComponent(match[1]),
+    alertId: decodeURIComponent(match[2]),
+  };
+}
+
+function publisherRouteIdentifier(publisher = state.publisher) {
+  return (
+    publisher?.publicSlug ||
+    publisher?.slug ||
+    publisher?.publicCode ||
+    publisher?.entityId ||
+    publisher?.id ||
+    state.publisherIdentifier ||
+    ""
+  );
+}
+
+function publisherRoutePath(publisher = state.publisher, suffix = "") {
+  const identifier = publisherRouteIdentifier(publisher);
+  return `/p/${encodeURIComponent(identifier)}${suffix}`;
+}
+
 function publisherPage() {
   const identifier = currentPublisherIdentifier();
   if (state.publisherIdentifier && state.publisherIdentifier !== identifier) {
@@ -845,6 +912,10 @@ function publisherPage() {
   const publisher = state.publisher;
   const selectedTopics = state.topics.filter((topic) => state.selectedTopicIds.has(topic.id));
   const canContinue = selectedTopics.length > 0;
+  const requestedTab = state.query.get("tab") === "posts" ? "posts" : state.publisherTab;
+  if (state.publisherTab !== requestedTab) {
+    state.publisherTab = requestedTab;
+  }
   const activeTab = state.publisherTab === "posts" ? "posts" : "topics";
   if (
     activeTab === "posts" &&
@@ -986,10 +1057,11 @@ function publisherPostCard(update, index) {
   const title = update.title || topicTitle || "Alert update";
   const body = update.body || "This update was sent by the publisher.";
   const time = formatPostTime(update.sentAt || update.createdAt);
-  const imageUrl = update.generatedImage?.url || update.imageUrl || "";
+  const imageUrl = update.generatedImage?.imageUrl || update.generatedImage?.url || update.imageUrl || "";
   const pinned = index === 0 && update.priority === "high";
+  const detailPath = publisherRoutePath(state.publisher, `/alerts/${encodeURIComponent(update.id)}`);
   return `
-    <article class="publisher-post-card">
+    <a class="publisher-post-card" href="${detailPath}" data-link>
       <div class="post-icon">
         ${imageUrl ? `<img src="${escapeHtml(imageUrl)}" alt="" loading="lazy" />` : icons.bell}
       </div>
@@ -1003,7 +1075,137 @@ function publisherPostCard(update, index) {
         <p>${escapeHtml(body)}</p>
       </div>
       <span class="post-arrow">${icons.chevron}</span>
-    </article>
+    </a>
+  `;
+}
+
+function alertDetailPage() {
+  const route = currentAlertRoute();
+  if (!route) return homePage();
+  if (
+    state.alertDetailError &&
+    (state.alertDetailId !== route.alertId ||
+      state.alertDetailPublisherIdentifier !== route.publisherIdentifier)
+  ) {
+    state.alertDetailError = "";
+  }
+  const needsLoad =
+    !state.alertDetail ||
+    state.alertDetailId !== route.alertId ||
+    state.alertDetailPublisherIdentifier !== route.publisherIdentifier;
+  if (needsLoad && !state.loadingAlertDetail && !state.alertDetailError) {
+    setTimeout(() => fetchAlertDetail(route.publisherIdentifier, route.alertId), 0);
+  }
+  if (state.loadingAlertDetail) {
+    return appShell(`<div class="shell section"><div class="empty">Loading alert details...</div></div>`);
+  }
+  if (state.alertDetailError) {
+    return appShell(
+      `<div class="shell section"><a href="/" class="back-link" data-link>${icons.arrow} Back</a><div class="empty">Alert not found or no longer public.</div></div>`
+    );
+  }
+  if (!state.alertDetail || !state.alertDetailPublisher) {
+    return appShell(`<div class="shell section"><div class="empty">Loading alert details...</div></div>`);
+  }
+
+  const publisher = state.alertDetailPublisher;
+  const update = state.alertDetail;
+  const topicTitle = update.topics?.[0]?.title || "General";
+  const priority = update.priority || "normal";
+  const imageUrl = update.generatedImage?.imageUrl || update.imageUrl || "";
+  const sentDate = update.sentAt || update.createdAt;
+  const channels = [
+    "Browser Push",
+    update.whatsappDelivery?.requested ? "WhatsApp" : "",
+    update.facebookPost?.success ? "Facebook" : "",
+  ].filter(Boolean);
+  const publisherPath = publisherRoutePath(publisher);
+  return appShell(
+    `
+      <section class="section">
+        <div class="shell alert-detail-shell">
+          <a href="${publisherPath}?tab=posts" class="back-link" data-link data-open-posts>${icons.arrow} Back</a>
+          <section class="publisher-identity alert-publisher-identity">
+            <div class="publisher-identity-main">
+              <div class="publisher-logo">${publisher.logoUrl ? `<img src="${escapeHtml(
+                publisher.logoUrl
+              )}" alt="" />` : initials(publisher.name)}</div>
+              <div>
+                <h1 class="page-title">${escapeHtml(publisher.name || "Publisher")} ${
+      publisher.verified !== false ? `<span class="verified">${icons.check}</span>` : ""
+    }</h1>
+                <p class="publisher-meta">${escapeHtml(
+                  publisher.category || "Publisher"
+                )} &bull; ${escapeHtml(publisher.city || publisher.location || "MyAlert")}</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="alert-hero">
+            <div class="alert-meta-strip">
+              <span class="post-chip">${escapeHtml(topicTitle)}</span>
+              ${
+                priority === "high" || priority === "urgent"
+                  ? `<span class="post-pin">${icons.pin} ${priority === "urgent" ? "Urgent" : "Pinned"}</span>`
+                  : ""
+              }
+              <span class="post-time">${escapeHtml(formatPostTime(sentDate))}</span>
+            </div>
+            <h2>${escapeHtml(update.title || "Alert update")}</h2>
+            <p>${escapeHtml(update.body || "This update was sent by the publisher.")}</p>
+            ${imageUrl ? `<img class="alert-detail-image" src="${escapeHtml(imageUrl)}" alt="" loading="lazy" />` : ""}
+          </section>
+
+          <section class="alert-detail-card">
+            <div class="alert-detail-card-head">
+              <div class="alert-detail-icon">${icons.posts}</div>
+              <h2>Update details</h2>
+              <button class="detail-icon-btn" type="button" data-share-alert="${escapeHtml(
+                window.location.href
+              )}" aria-label="Share alert">${icons.share}</button>
+              <button class="detail-icon-btn" type="button" aria-label="Save alert">${icons.bookmark}</button>
+            </div>
+            <div class="detail-rows">
+              ${detailRow(icons.bell, "Topic", topicTitle)}
+              ${detailRow(icons.calendar, "Published", sentDate ? new Date(sentDate).toLocaleString("en-IN", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              }) : "Just now")}
+              ${detailRow(icons.clock, "Priority", priority[0].toUpperCase() + priority.slice(1))}
+              ${detailRow(icons.message, "Channels", channels.join(", ") || "Browser Push")}
+            </div>
+          </section>
+
+          <section class="alert-detail-card">
+            <div class="alert-detail-card-head simple">
+              <div class="alert-detail-icon">${icons.shield}</div>
+              <h2>Stay updated</h2>
+            </div>
+            <p class="detail-note">Choose topics from this publisher and receive future alerts through browser push or WhatsApp.</p>
+          </section>
+
+          <div class="alert-detail-actions">
+            <a class="primary-btn" href="${publisherPath}" data-link data-focus-alerts>${icons.bell} Enable alerts from this publisher</a>
+            <a class="secondary-btn" href="${publisherPath}?tab=posts" data-link data-open-posts>View all posts</a>
+          </div>
+        </div>
+      </section>
+    `
+  );
+}
+
+function detailRow(icon, label, value) {
+  return `
+    <div class="detail-row">
+      <span class="detail-row-icon">${icon}</span>
+      <div>
+        <span>${escapeHtml(label)}</span>
+        <strong>${escapeHtml(value || "-")}</strong>
+      </div>
+    </div>
   `;
 }
 
@@ -1925,7 +2127,9 @@ function render() {
   }
   const queryPublisher = state.query.get("code") || state.query.get("partner");
   let html = "";
-  if (path === "/" && queryPublisher) {
+  if (currentAlertRoute()) {
+    html = alertDetailPage();
+  } else if (path === "/" && queryPublisher) {
     html = publisherPage();
   } else if (path === "/") {
     state.publisher = null;
@@ -1963,10 +2167,25 @@ function bindEvents() {
       event.preventDefault();
       if (link.hasAttribute("data-focus-alerts")) {
         state.publisherFocusPending = true;
+        state.publisherTab = "topics";
+      }
+      if (link.hasAttribute("data-open-posts")) {
+        state.publisherTab = "posts";
       }
       closeMenu();
       routeTo(href);
     });
+  });
+  document.querySelector("[data-share-alert]")?.addEventListener("click", (event) => {
+    const url = event.currentTarget.dataset.shareAlert || window.location.href;
+    if (navigator.share) {
+      navigator.share({ title: "MyAlert update", url }).catch(() => {});
+      return;
+    }
+    navigator.clipboard?.writeText(url).then(
+      () => toast("Alert link copied."),
+      () => toast("Copy this alert link from your browser address bar.")
+    );
   });
   document.querySelector("[data-menu-open]")?.addEventListener("click", openMenu);
   document.querySelectorAll("[data-menu-close]").forEach((el) => el.addEventListener("click", closeMenu));
