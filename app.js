@@ -189,7 +189,6 @@ function currentAlertSavePayload() {
     publisherSlug: publisher.publicSlug || publisher.slug || publisher.id || state.alertDetailPublisherIdentifier,
     publisherCategory: publisher.category || "Publisher",
     publisherLocation: publisher.city || publisher.location || "MyAlert",
-    imageUrl: update.generatedImage?.imageUrl || update.imageUrl || "",
     sentAt: update.sentAt || update.createdAt || new Date().toISOString(),
     savedAt: new Date().toISOString(),
     url: window.location.pathname + window.location.search,
@@ -1458,13 +1457,12 @@ function publisherPostCard(update, index) {
   const title = update.title || topicTitle || "Alert update";
   const body = update.body || "This update was sent by the publisher.";
   const time = formatPostTime(update.sentAt || update.createdAt);
-  const imageUrl = update.generatedImage?.imageUrl || update.generatedImage?.url || update.imageUrl || "";
   const pinned = index === 0 && update.priority === "high";
   const detailPath = publisherRoutePath(state.publisher, `/alerts/${encodeURIComponent(update.id)}`);
   return `
     <a class="publisher-post-card" href="${detailPath}" data-link>
       <div class="post-icon">
-        ${imageUrl ? `<img src="${escapeHtml(imageUrl)}" alt="" loading="lazy" />` : icons.bell}
+        ${icons.bell}
       </div>
       <div class="post-content">
         <div class="post-meta-row">
@@ -1513,7 +1511,6 @@ function alertDetailPage() {
   const update = state.alertDetail;
   const topicTitle = update.topics?.[0]?.title || "General";
   const priority = update.priority || "normal";
-  const imageUrl = update.generatedImage?.imageUrl || update.imageUrl || "";
   const sentDate = update.sentAt || update.createdAt;
   const saved = isAlertSaved(update.id);
   const channels = [
@@ -1555,7 +1552,6 @@ function alertDetailPage() {
             </div>
             <h2>${escapeHtml(update.title || "Alert update")}</h2>
             <p>${escapeHtml(update.body || "This update was sent by the publisher.")}</p>
-            ${imageUrl ? `<img class="alert-detail-image" src="${escapeHtml(imageUrl)}" alt="" loading="lazy" />` : ""}
           </section>
 
           <section class="alert-detail-card">
@@ -2257,7 +2253,7 @@ function savedAlertCard(item) {
     <article class="saved-alert-card">
       <a href="${escapeHtml(href)}" data-link>
         <div class="post-icon">
-          ${item.imageUrl ? `<img src="${escapeHtml(item.imageUrl)}" alt="" loading="lazy" />` : icons.bookmark}
+          ${icons.bookmark}
         </div>
         <div>
           <div class="publisher-meta">${escapeHtml(item.publisherName || "Publisher")} &bull; ${escapeHtml(
