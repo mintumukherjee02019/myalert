@@ -1550,7 +1550,6 @@ function alertDetailPage() {
               }
               <span class="post-time">${escapeHtml(formatPostTime(sentDate))}</span>
             </div>
-            <h2>${escapeHtml(update.title || "Alert update")}</h2>
           </section>
 
           <section class="alert-detail-card">
