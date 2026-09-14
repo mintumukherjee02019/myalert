@@ -464,13 +464,14 @@ function drawAlertPdfFrame(doc) {
   doc.line(18.2, 22.8, 23.8, 22.8);
   doc.setTextColor(15, 23, 42);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(17);
-  doc.text("Traeto", 33, 17);
+  doc.setFontSize(19);
+  doc.text("My", 33, 18);
   doc.setTextColor(225, 29, 72);
-  doc.text("MyAlert", 33, 25);
+  doc.text("Alert", 43, 18);
   doc.setTextColor(100, 116, 139);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
+  doc.text("Get only the alerts you choose.", 33, 26);
   doc.text("Public alert document", pageWidth - 14, 17, { align: "right" });
   doc.text("Generated on myalert.in", pageWidth - 14, 25, { align: "right" });
 
