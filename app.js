@@ -43,6 +43,7 @@ const state = {
   whatsappOtpMessage: "",
   whatsappOtpCooldownUntil: 0,
   whatsappVerifiedPhone: "",
+  lastSubscriptionWhatsAppEnabled: true,
   apiRequestName: "",
   apiRequestPhone: "",
   apiRequestEmail: "",
@@ -1681,52 +1682,60 @@ function whatsappCard(canContinue, publisherName) {
         </div>
       </div>
       <div style="display: grid; gap: 12px;">
-        <div class="field">
-          <label>Your Name *</label>
-          <input class="input" data-wa-name value="${escapeHtml(state.whatsappName)}" placeholder="Your name" />
-        </div>
-        <div class="field">
-          <label>WhatsApp Number *</label>
-          <div class="phone-input">
-            <span>+91</span>
-            <input class="input" data-wa-phone value="${escapeHtml(
-              displayIndianPhone(state.whatsappPhone)
-            )}" inputmode="tel" placeholder="98765 43210" maxlength="12" />
-          </div>
-        </div>
-        <div class="otp-panel ${verified ? "verified" : ""}">
-          <div class="otp-panel-head">
-            <div>
-              <strong>${verified ? "Number verified" : "Verify WhatsApp number"}</strong>
-              <p>${verified ? "You can submit your alert preferences now." : "We will send a 4 digit OTP to this WhatsApp number."}</p>
-            </div>
-            ${
-              verified
-                ? `<span class="otp-verified-badge">${icons.check} Verified</span>`
-                : `<button class="secondary-btn otp-btn" type="button" data-request-wa-otp ${state.whatsappOtpBusy || cooldown > 0 ? "disabled" : ""}>
-                    ${cooldown > 0 ? `Resend in ${cooldown}s` : state.whatsappOtpSent ? "Resend OTP" : "Send OTP"}
-                  </button>`
-            }
-          </div>
-          ${
-            state.whatsappOtpSent && !verified
-              ? `<div class="otp-row">
-                  <input class="input otp-input" data-wa-otp value="${escapeHtml(
-                    state.whatsappOtp
-                  )}" inputmode="numeric" placeholder="Enter OTP" maxlength="4" autocomplete="one-time-code" />
-                  <button class="primary-btn otp-btn" type="button" data-verify-wa-otp ${state.whatsappOtpBusy ? "disabled" : ""}>Verify</button>
-                </div>`
-              : ""
-          }
-          <p class="otp-message" data-otp-message>${escapeHtml(state.whatsappOtpMessage)}</p>
-        </div>
         <label class="consent">
           <input type="checkbox" data-wa-consent ${state.whatsappConsent ? "checked" : ""} />
           <span>I agree to receive WhatsApp alerts from MyAlert on behalf of ${escapeHtml(
             publisherName
           )} for the topics I selected above.</span>
         </label>
-        <p class="small-text">You can unsubscribe anytime. Your number is used to deliver the alerts you choose and manage your subscription.</p>
+        ${
+          state.whatsappConsent
+            ? `<div class="field">
+                <label>Your Name *</label>
+                <input class="input" data-wa-name value="${escapeHtml(state.whatsappName)}" placeholder="Your name" />
+              </div>
+              <div class="field">
+                <label>WhatsApp Number *</label>
+                <div class="phone-input">
+                  <span>+91</span>
+                  <input class="input" data-wa-phone value="${escapeHtml(
+                    displayIndianPhone(state.whatsappPhone)
+                  )}" inputmode="tel" placeholder="98765 43210" maxlength="12" />
+                </div>
+              </div>
+              <div class="otp-panel ${verified ? "verified" : ""}">
+                <div class="otp-panel-head">
+                  <div>
+                    <strong>${verified ? "Number verified" : "Verify WhatsApp number"}</strong>
+                    <p>${verified ? "You can submit your alert preferences now." : "We will send a 4 digit OTP to this WhatsApp number."}</p>
+                  </div>
+                  ${
+                    verified
+                      ? `<span class="otp-verified-badge">${icons.check} Verified</span>`
+                      : `<button class="secondary-btn otp-btn" type="button" data-request-wa-otp ${state.whatsappOtpBusy || cooldown > 0 ? "disabled" : ""}>
+                          ${cooldown > 0 ? `Resend in ${cooldown}s` : state.whatsappOtpSent ? "Resend OTP" : "Send OTP"}
+                        </button>`
+                  }
+                </div>
+                ${
+                  state.whatsappOtpSent && !verified
+                    ? `<div class="otp-row">
+                        <input class="input otp-input" data-wa-otp value="${escapeHtml(
+                          state.whatsappOtp
+                        )}" inputmode="numeric" placeholder="Enter OTP" maxlength="4" autocomplete="one-time-code" />
+                        <button class="primary-btn otp-btn" type="button" data-verify-wa-otp ${state.whatsappOtpBusy ? "disabled" : ""}>Verify</button>
+                      </div>`
+                    : ""
+                }
+                <p class="otp-message" data-otp-message>${escapeHtml(state.whatsappOtpMessage)}</p>
+              </div>`
+            : `<div class="warning-box whatsapp-consent-warning">WhatsApp consent is unchecked, so this publisher will not send alerts to you on WhatsApp. Browser notifications will be used where supported.</div>`
+        }
+        <p class="small-text">${
+          state.whatsappConsent
+            ? "You can unsubscribe anytime. Your number is used to deliver the alerts you choose and manage your subscription."
+            : "Name and WhatsApp number are not required when WhatsApp consent is unchecked."
+        }</p>
       </div>
     </article>
   `;
@@ -1740,7 +1749,7 @@ function summaryCard(selectedTopics, canContinue) {
         ? "Browser Push on"
         : "Browser Push on submit"
       : "",
-    "WhatsApp",
+    state.whatsappConsent ? "WhatsApp" : "WhatsApp off",
   ].filter(Boolean);
   return `
     <article class="summary-card">
@@ -1751,7 +1760,11 @@ function summaryCard(selectedTopics, canContinue) {
         <li><span>Delivery</span><strong>${delivery.length ? delivery.join(", ") : "Choose method"}</strong></li>
       </ul>
       <button class="primary-btn submit-preferences-btn" data-save-preferences ${!canContinue ? "disabled" : ""}>Submit Alert Preferences</button>
-      <p class="small-text">This will save your WhatsApp consent and enable browser notifications where supported.</p>
+      <p class="small-text">${
+        state.whatsappConsent
+          ? "This will save your WhatsApp consent and enable browser notifications where supported."
+          : "WhatsApp alerts will not be sent because consent is unchecked."
+      }</p>
     </article>
   `;
 }
@@ -1786,6 +1799,7 @@ async function prepareBrowserSubscription() {
 
 async function saveSubscription(subscription) {
   const topicIds = [...state.selectedTopicIds];
+  const wantsWhatsApp = state.whatsappConsent === true;
   const body = {
     publicSlug: state.publisher.publicSlug || state.publisher.slug || state.publisher.id,
     partnerId: state.publisher.id,
@@ -1798,26 +1812,35 @@ async function saveSubscription(subscription) {
   if (subscription) {
     body.browserPush = subscription.toJSON();
   }
-  if (!validateWhatsapp()) return;
-  body.displayName = state.whatsappName.trim();
-  body.phoneNumber = normalizePhone(state.whatsappPhone);
-  body.whatsappOptIn = { enabled: true };
+  if (wantsWhatsApp) {
+    if (!validateWhatsapp()) return false;
+    body.displayName = state.whatsappName.trim();
+    body.phoneNumber = normalizePhone(state.whatsappPhone);
+    body.whatsappOptIn = { enabled: true };
+  } else {
+    body.whatsappOptIn = { enabled: false };
+    const savedVerifiedPhone = normalizePhone(getSavedContact().verifiedWhatsAppPhone);
+    if (savedVerifiedPhone) body.phoneNumber = savedVerifiedPhone;
+  }
   await fetchJson(`${API_BASE}/api/myalert-publisher-notifications/public/subscriptions`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  const savedContact = getSavedContact();
-  saveSavedContact({
-    displayName: state.whatsappName.trim() || savedContact.displayName,
-    phoneNumber: normalizePhone(state.whatsappPhone) || savedContact.phoneNumber,
-    verifiedWhatsAppPhone: state.whatsappVerifiedPhone || savedContact.verifiedWhatsAppPhone,
-    verifiedWhatsAppName:
-      state.whatsappVerifiedPhone === normalizePhone(state.whatsappPhone)
-        ? state.whatsappName.trim()
-        : savedContact.verifiedWhatsAppName,
-    lastEndpoint: subscription?.endpoint || savedContact.lastEndpoint || "",
-  });
+  if (wantsWhatsApp || subscription) {
+    const savedContact = getSavedContact();
+    saveSavedContact({
+      displayName: state.whatsappName.trim() || savedContact.displayName,
+      phoneNumber: normalizePhone(state.whatsappPhone) || savedContact.phoneNumber,
+      verifiedWhatsAppPhone: state.whatsappVerifiedPhone || savedContact.verifiedWhatsAppPhone,
+      verifiedWhatsAppName:
+        state.whatsappVerifiedPhone === normalizePhone(state.whatsappPhone)
+          ? state.whatsappName.trim()
+          : savedContact.verifiedWhatsAppName,
+      lastEndpoint: subscription?.endpoint || savedContact.lastEndpoint || "",
+    });
+  }
+  return true;
 }
 
 function validateWhatsapp(options = {}) {
@@ -2029,8 +2052,9 @@ async function savePreferences() {
     toast("Select at least one topic.");
     return;
   }
-  if (state.whatsappOpen && !validateWhatsapp()) return;
-  if (state.whatsappOpen && state.whatsappVerifiedPhone !== normalizePhone(state.whatsappPhone)) {
+  const wantsWhatsApp = state.whatsappConsent === true;
+  if (wantsWhatsApp && !validateWhatsapp()) return;
+  if (wantsWhatsApp && state.whatsappVerifiedPhone !== normalizePhone(state.whatsappPhone)) {
     toast("Verify your WhatsApp number with OTP first.");
     document.querySelector("[data-request-wa-otp]")?.focus();
     return;
@@ -2041,7 +2065,17 @@ async function savePreferences() {
   if (subscription) {
     state.browserEnabled = true;
   }
-  await saveSubscription(subscription);
+  if (!wantsWhatsApp && !subscription) {
+    showActionDialog(
+      "error",
+      "WhatsApp alerts are off",
+      "You unchecked WhatsApp consent, so WhatsApp alerts will not be sent. Browser notifications were not enabled on this device, so no delivery method is active."
+    );
+    return;
+  }
+  const saved = await saveSubscription(subscription);
+  if (!saved) return;
+  state.lastSubscriptionWhatsAppEnabled = wantsWhatsApp;
   state.subscriptionsLoaded = false;
   state.updatesLoaded = false;
   routeTo("/done");
@@ -2402,7 +2436,11 @@ function donePage() {
           <div class="success-card">
             <div class="success-tick">${icons.check}</div>
             <h1>All done</h1>
-            <p>You are subscribed. Alerts from this publisher will now reach you for the topics you selected.</p>
+            <p>${
+              state.lastSubscriptionWhatsAppEnabled
+                ? "You are subscribed. Alerts from this publisher will now reach you for the topics you selected."
+                : "Your alert preferences are saved. WhatsApp alerts are off because you unchecked consent, so this publisher will not send alerts to you on WhatsApp."
+            }</p>
             <a class="primary-btn" href="/" data-link>Back to Home</a>
             <span class="small-text redirect-countdown">You will be redirected to home in <strong data-success-countdown>10</strong> seconds.</span>
           </div>
@@ -2862,6 +2900,7 @@ function bindEvents() {
   });
   document.querySelector("[data-wa-consent]")?.addEventListener("change", (event) => {
     state.whatsappConsent = event.target.checked;
+    render();
   });
   document.querySelector("[data-lookup-phone]")?.addEventListener("input", (event) => {
     saveSavedContact({ phoneNumber: normalizePhone(event.target.value) });
