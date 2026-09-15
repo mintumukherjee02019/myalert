@@ -1736,9 +1736,12 @@ a {
   justify-content: flex-end;
   gap: 20px;
   min-height: 132px;
+  width: max-content;
+  max-width: 100%;
+  justify-self: end;
   color: #d5d7dc;
   filter: grayscale(1);
-  overflow: hidden;
+  overflow: visible;
   user-select: none;
 }
 
@@ -1764,7 +1767,7 @@ a {
   color: #c9cbd0;
   font-size: 126px;
   font-weight: 900;
-  line-height: 0.82;
+  line-height: 0.95;
   letter-spacing: 0;
   white-space: nowrap;
 }
@@ -1777,6 +1780,8 @@ a {
   display: flex;
   flex-wrap: wrap;
   gap: 14px;
+  justify-self: start;
+  align-self: center;
 }
 
 .footer-brand {
@@ -2030,6 +2035,7 @@ a {
     justify-content: flex-end;
     gap: 12px;
     min-height: 82px;
+    width: 100%;
   }
 
   .footer-giant-mark {
@@ -2044,7 +2050,8 @@ a {
   }
 
   .footer-giant-wordmark {
-    font-size: 64px;
+    font-size: 56px;
+    line-height: 0.98;
   }
 
   .alert-detail-card-head {
