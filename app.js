@@ -8,7 +8,7 @@ const state = {
   route: window.location.pathname,
   query: new URLSearchParams(window.location.search),
   activeCategory: "All",
-  homeVisiblePublishers: 5,
+  homeVisiblePublishers: 10,
   search: "",
   filters: ["All"],
   publishers: [],
@@ -680,7 +680,7 @@ function maybeLoadMoreHomePublishers() {
   if (!marker) return;
   const rect = marker.getBoundingClientRect();
   if (rect.top > window.innerHeight + 180) return;
-  state.homeVisiblePublishers += 5;
+  state.homeVisiblePublishers += 10;
   render();
 }
 
@@ -965,11 +965,8 @@ function homePage() {
           </div>
           ${
             hasMorePublishers
-              ? `<div class="lazy-load-status" data-home-load-more>
-                  <span class="loader-dot"></span>
-                  <span>Scroll to load 5 more publishers</span>
-                </div>`
-              : filtered.length > 5
+              ? `<div class="load-more-wrap"><button class="secondary-btn load-more-btn" type="button" data-home-load-more>Load more publishers</button></div>`
+              : filtered.length > 10
               ? '<p class="lazy-load-status complete">All publishers loaded.</p>'
               : ""
           }
@@ -1073,7 +1070,7 @@ async function fetchPublisherPosts({ reset = false } = {}) {
         identifier
       )}/updates`
     );
-    url.searchParams.set("limit", "5");
+    url.searchParams.set("limit", "8");
     url.searchParams.set("offset", String(state.publisherPostsOffset));
     const payload = await fetchJson(url.toString());
     const nextUpdates = payload.updates || [];
@@ -1436,10 +1433,9 @@ function publisherPostsSection(publisher) {
       </div>
       ${
         state.publisherPostsHasMore
-          ? `<div class="lazy-load-status" data-publisher-posts-load-more>
-              <span class="loader-dot"></span>
-              <span>${state.loadingPublisherPosts ? "Loading more posts..." : "Scroll to load more posts"}</span>
-            </div>`
+          ? `<div class="load-more-wrap"><button class="secondary-btn load-more-btn" type="button" data-publisher-posts-load-more ${
+              state.loadingPublisherPosts ? "disabled" : ""
+            }>${state.loadingPublisherPosts ? "Loading more posts..." : "Load more updates"}</button></div>`
           : posts.length
           ? `<div class="posts-end">
               <img src="/assets/share/myalert-preview.png" alt="" />
@@ -2787,7 +2783,7 @@ function bindEvents() {
   document.querySelectorAll("[data-menu-close]").forEach((el) => el.addEventListener("click", closeMenu));
   document.querySelector("[data-search-input]")?.addEventListener("input", (event) => {
     state.search = event.target.value;
-    state.homeVisiblePublishers = 5;
+    state.homeVisiblePublishers = 10;
     state.publishersLoaded = false;
     window.clearTimeout(searchTimer);
     searchTimer = window.setTimeout(() => fetchPublicPublishers(state.search), 300);
@@ -2799,9 +2795,16 @@ function bindEvents() {
   document.querySelectorAll("[data-category]").forEach((button) => {
     button.addEventListener("click", () => {
       state.activeCategory = button.dataset.category;
-      state.homeVisiblePublishers = 5;
+      state.homeVisiblePublishers = 10;
       render();
     });
+  });
+  document.querySelector("[data-home-load-more]")?.addEventListener("click", () => {
+    state.homeVisiblePublishers += 10;
+    render();
+  });
+  document.querySelector("[data-publisher-posts-load-more]")?.addEventListener("click", () => {
+    fetchPublisherPosts().catch((error) => toast(error.message || "Could not load more updates."));
   });
   document.querySelector("[data-find-code]")?.addEventListener("click", () => {
     const value = document.querySelector("[data-code-input]")?.value?.trim();
@@ -2965,7 +2968,6 @@ function closeMenu() {
 }
 
 window.addEventListener("popstate", syncRoute);
-window.addEventListener("scroll", handleScrollLoaders, { passive: true });
 document.addEventListener("DOMContentLoaded", () => {
   const pendingRoute = sessionStorage.getItem("myalert_pending_route");
   if (pendingRoute) {

@@ -557,6 +557,16 @@ a {
   background: #fff;
 }
 
+.load-more-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 18px;
+}
+
+.load-more-btn {
+  min-width: 190px;
+}
+
 .loader-dot {
   width: 10px;
   height: 10px;
