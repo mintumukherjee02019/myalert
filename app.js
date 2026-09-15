@@ -1140,7 +1140,7 @@ async function hydratePublisherSubscription() {
     if (!subscription) return;
     state.browserEnabled = subscription.hasBrowserPush === true;
     state.whatsappOpen = true;
-    state.whatsappConsent = true;
+    state.whatsappConsent = subscription.whatsappOptIn?.enabled === true;
     state.whatsappName = saved.verifiedWhatsAppName || subscription.displayName || saved.displayName || "";
     state.whatsappPhone = saved.verifiedWhatsAppPhone || subscription.phoneNumber || saved.phoneNumber || "";
     applySavedWhatsAppVerification();
