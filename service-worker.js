@@ -1,8 +1,8 @@
-const CACHE_NAME = "myalert-shell-v31";
+const CACHE_NAME = "myalert-shell-v32";
 const APP_SHELL = [
   "/",
-  "/styles.css?v=20260915-gemini-tabs",
-  "/app.js?v=20260915-gemini-tabs",
+  "/styles.css?v=20260915-push-image",
+  "/app.js?v=20260915-push-image",
   "/manifest.webmanifest",
   "/assets/share/myalert-preview.png",
 ];
@@ -63,7 +63,7 @@ self.addEventListener("push", (event) => {
     body: data.body || "You have a new alert.",
     icon: data.icon || "/icons/icon-192.png",
     badge: data.badge || "/icons/icon-192.png",
-    image: data.image || undefined,
+    image: data.image || data.imageUrl || undefined,
     data: {
       url: data.url || data.actionUrl || "/history",
     },
