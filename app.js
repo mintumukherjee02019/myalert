@@ -785,7 +785,11 @@ function footer() {
   return `
     <footer class="footer">
       <div class="shell footer-inner">
-        <div>
+        <div class="footer-giant" aria-hidden="true">
+          <span class="footer-giant-mark">${icons.bell}</span>
+          <span class="footer-giant-wordmark">My<span>Alert</span></span>
+        </div>
+        <div class="footer-caption">
           <strong class="footer-brand">MyAlert</strong>
           <p class="tagline-small">Get only the alerts you choose.</p>
         </div>
