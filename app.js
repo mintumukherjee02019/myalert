@@ -789,10 +789,6 @@ function footer() {
           <span class="footer-giant-mark">${icons.bell}</span>
           <span class="footer-giant-wordmark">My<span>Alert</span></span>
         </div>
-        <div class="footer-caption">
-          <strong class="footer-brand">MyAlert</strong>
-          <p class="tagline-small">Get only the alerts you choose.</p>
-        </div>
         <div class="footer-links">
           <a href="/privacy" data-link>Privacy</a>
           <a href="/terms" data-link>Terms</a>

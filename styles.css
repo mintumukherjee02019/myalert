@@ -1725,7 +1725,7 @@ a {
   align-items: flex-end;
   justify-content: flex-end;
   gap: 20px;
-  min-height: 150px;
+  min-height: 132px;
   color: #d5d7dc;
   filter: grayscale(1);
   overflow: hidden;
@@ -1752,7 +1752,7 @@ a {
 .footer-giant-wordmark {
   max-width: 100%;
   color: #c9cbd0;
-  font-size: 150px;
+  font-size: 126px;
   font-weight: 900;
   line-height: 0.82;
   letter-spacing: 0;
@@ -1761,11 +1761,6 @@ a {
 
 .footer-giant-wordmark span {
   color: #aeb1b8;
-}
-
-.footer-caption {
-  display: grid;
-  gap: 3px;
 }
 
 .footer-links {
@@ -2022,7 +2017,7 @@ a {
   }
 
   .footer-giant {
-    justify-content: flex-start;
+    justify-content: flex-end;
     gap: 12px;
     min-height: 82px;
   }
@@ -2039,7 +2034,7 @@ a {
   }
 
   .footer-giant-wordmark {
-    font-size: 72px;
+    font-size: 64px;
   }
 
   .alert-detail-card-head {
