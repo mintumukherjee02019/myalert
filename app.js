@@ -785,16 +785,16 @@ function footer() {
   return `
     <footer class="footer">
       <div class="shell footer-inner">
-        <div class="footer-giant" aria-hidden="true">
-          <span class="footer-giant-mark">${icons.bell}</span>
-          <span class="footer-giant-wordmark">My<span>Alert</span></span>
-        </div>
         <div class="footer-links">
           <a href="/privacy" data-link>Privacy</a>
           <a href="/terms" data-link>Terms</a>
           <a href="/help" data-link>Help</a>
           <a href="/contact" data-link>Contact</a>
           <a href="/api-req" data-link>API Req</a>
+        </div>
+        <div class="footer-giant" aria-hidden="true">
+          <span class="footer-giant-mark">${icons.bell}</span>
+          <span class="footer-giant-wordmark">My<span>Alert</span></span>
         </div>
       </div>
     </footer>
