@@ -23,7 +23,7 @@ const state = {
   alertDetailPublisherIdentifier: "",
   publisher: null,
   publisherIdentifier: "",
-  publisherTab: "posts",
+  publisherTab: "topics",
   topics: [],
   webPush: { enabled: false, publicKey: "" },
   selectedTopicIds: new Set(),
@@ -1017,7 +1017,7 @@ async function fetchPublisher(identifier) {
   state.error = "";
   if (state.publisherIdentifier !== identifier) {
     resetPublisherPosts();
-    state.publisherTab = state.query.get("tab") === "topics" ? "topics" : "posts";
+    state.publisherTab = state.query.get("tab") === "posts" ? "posts" : "topics";
   }
   state.publisherIdentifier = identifier;
   render();
@@ -1396,18 +1396,18 @@ function publisherPage() {
 function publisherTabs(activeTab) {
   return `
     <div class="publisher-tabs" role="tablist" aria-label="Publisher sections">
+      <button class="publisher-tab ${activeTab === "topics" ? "active" : ""}" type="button" data-publisher-tab="topics" role="tab" aria-selected="${
+        activeTab === "topics"
+      }">
+        ${icons.bell}
+        <span>Topics</span>
+      </button>
       <button class="publisher-tab ${activeTab === "posts" ? "active" : ""}" type="button" data-publisher-tab="posts" role="tab" aria-selected="${
         activeTab === "posts"
       }">
         ${icons.posts}
         <span>All Posts</span>
         <small>Latest posts</small>
-      </button>
-      <button class="publisher-tab ${activeTab === "topics" ? "active" : ""}" type="button" data-publisher-tab="topics" role="tab" aria-selected="${
-        activeTab === "topics"
-      }">
-        ${icons.bell}
-        <span>Topics</span>
       </button>
     </div>
   `;
