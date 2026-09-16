@@ -1547,7 +1547,19 @@ function alertDetailPage() {
               }
               <span class="post-time">${escapeHtml(formatPostTime(sentDate))}</span>
             </div>
+            <h1 class="alert-feed-title">${escapeHtml(update.body || "This update was sent by the publisher.")}</h1>
           </section>
+
+          ${update.imageUrl ? `
+            <figure class="alert-feed-media">
+              <img src="${escapeHtml(update.imageUrl)}" alt="${escapeHtml(update.title || "Alert image")}" loading="eager" />
+            </figure>
+          ` : `
+            <section class="alert-feed-text" aria-label="Alert message">
+              <span class="alert-feed-text-icon">${icons.message}</span>
+              <p>${escapeHtml(update.body || "This update was sent by the publisher.")}</p>
+            </section>
+          `}
 
           <section class="alert-detail-card">
             <div class="alert-detail-card-head">
