@@ -1451,24 +1451,23 @@ function publisherPostsSection(publisher) {
 function publisherPostCard(update, index) {
   const topic = update.topics?.[0] || {};
   const topicTitle = topic.title || "General";
-  const title = update.title || topicTitle || "Alert update";
   const body = update.body || "This update was sent by the publisher.";
   const time = formatPostTime(update.sentAt || update.createdAt);
   const pinned = index === 0 && update.priority === "high";
   const detailPath = publisherRoutePath(state.publisher, `/alerts/${encodeURIComponent(update.id)}`);
   return `
     <a class="publisher-post-card" href="${detailPath}" data-link>
-      <div class="post-icon">
-        ${icons.bell}
-      </div>
+      ${update.imageUrl ? `<div class="post-media"><img src="${escapeHtml(update.imageUrl)}" alt="" loading="lazy" /></div>` : ""}
       <div class="post-content">
         <div class="post-meta-row">
           <span class="post-chip">${escapeHtml(topicTitle)}</span>
           ${pinned ? `<span class="post-pin">${icons.pin} Pinned</span>` : ""}
           <span class="post-time">${escapeHtml(time)}</span>
         </div>
-        <h3>${escapeHtml(title)}</h3>
-        <p>${escapeHtml(body)}</p>
+        <div class="post-message">
+          <span class="post-message-icon">${icons.bell}</span>
+          <h3>${escapeHtml(body)}</h3>
+        </div>
       </div>
       <span class="post-arrow">${icons.chevron}</span>
     </a>
