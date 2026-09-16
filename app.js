@@ -1454,10 +1454,8 @@ function publisherPostCard(update, index) {
   const body = update.body || "This update was sent by the publisher.";
   const time = formatPostTime(update.sentAt || update.createdAt);
   const pinned = index === 0 && update.priority === "high";
-  const detailPath = publisherRoutePath(state.publisher, `/alerts/${encodeURIComponent(update.id)}`);
   return `
-    <a class="publisher-post-card" href="${detailPath}" data-link>
-      ${update.imageUrl ? `<div class="post-media"><img src="${escapeHtml(update.imageUrl)}" alt="" loading="lazy" /></div>` : ""}
+    <article class="publisher-post-card">
       <div class="post-content">
         <div class="post-meta-row">
           <span class="post-chip">${escapeHtml(topicTitle)}</span>
@@ -1469,8 +1467,8 @@ function publisherPostCard(update, index) {
           <h3>${escapeHtml(body)}</h3>
         </div>
       </div>
-      <span class="post-arrow">${icons.chevron}</span>
-    </a>
+      ${update.imageUrl ? `<div class="post-media"><img src="${escapeHtml(update.imageUrl)}" alt="" loading="lazy" /></div>` : ""}
+    </article>
   `;
 }
 
