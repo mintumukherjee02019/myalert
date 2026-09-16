@@ -863,6 +863,12 @@ a {
   transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 }
 
+.publisher-posts-list .publisher-post-card {
+  background: #fff;
+  background-image: none;
+  border: 1px solid #e5e7eb;
+}
+
 .publisher-post-card:hover,
 .publisher-post-card:focus-visible {
   border-color: #f19ab0;
