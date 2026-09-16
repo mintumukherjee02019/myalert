@@ -281,6 +281,11 @@ function openFeedAlert(alertId) {
 
 function closeFeedAlert() {
   state.feedAlertOverlay = null;
+  const alertRoute = currentAlertRoute();
+  if (alertRoute) {
+    routeTo(`/p/${encodeURIComponent(alertRoute.publisherIdentifier)}?tab=posts`);
+    return;
+  }
   render();
 }
 
@@ -1155,6 +1160,15 @@ async function fetchAlertDetail(publisherIdentifier, alertId) {
     state.alertDetailPublisher = null;
   } finally {
     state.loadingAlertDetail = false;
+    const activeAlertRoute = currentAlertRoute();
+    if (
+      !state.alertDetailError &&
+      state.alertDetail &&
+      activeAlertRoute?.alertId === alertId &&
+      activeAlertRoute?.publisherIdentifier === publisherIdentifier
+    ) {
+      state.feedAlertOverlay = state.alertDetail;
+    }
     render();
   }
 }
@@ -1281,6 +1295,8 @@ function normalizePublisher(raw = {}) {
 }
 
 function currentPublisherIdentifier() {
+  const alertRoute = currentAlertRoute();
+  if (alertRoute) return alertRoute.publisherIdentifier;
   const path = state.route;
   if (path.startsWith("/p/")) return decodeURIComponent(path.slice(3));
   if (path.startsWith("/code/")) return decodeURIComponent(path.slice(6));
@@ -1320,6 +1336,8 @@ function publisherRoutePath(publisher = state.publisher, suffix = "") {
 
 function publisherPage() {
   const identifier = currentPublisherIdentifier();
+  const alertRoute = currentAlertRoute();
+  if (alertRoute) state.publisherTab = "posts";
   if (state.publisherIdentifier && state.publisherIdentifier !== identifier) {
     state.publisher = null;
     state.error = "";
@@ -1359,6 +1377,15 @@ function publisherPage() {
     !state.publisherPostsError
   ) {
     setTimeout(() => fetchPublisherPosts({ reset: true }), 0);
+  }
+  if (
+    alertRoute &&
+    !state.feedAlertOverlay &&
+    !state.loadingAlertDetail &&
+    (state.alertDetailId !== alertRoute.alertId ||
+      state.alertDetailPublisherIdentifier !== alertRoute.publisherIdentifier)
+  ) {
+    setTimeout(() => fetchAlertDetail(alertRoute.publisherIdentifier, alertRoute.alertId), 0);
   }
   return appShell(
     `
@@ -2772,7 +2799,8 @@ function render() {
   const queryPublisher = state.query.get("code") || state.query.get("partner");
   let html = "";
   if (currentAlertRoute()) {
-    html = alertDetailPage();
+    state.publisherTab = "posts";
+    html = publisherPage();
   } else if (path === "/" && queryPublisher) {
     html = publisherPage();
   } else if (path === "/") {
