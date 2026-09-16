@@ -856,10 +856,18 @@ a {
   align-items: start;
   padding: 12px;
   overflow: hidden;
-  background:
-    radial-gradient(circle at 12% 12%, rgba(255, 228, 232, 0.95), transparent 32%),
-    linear-gradient(135deg, #fff 0%, #fff7f9 100%);
-  border-color: #fb9aaa;
+  background: #fff;
+  border-color: #dbe2ea;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
+  cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.publisher-post-card:hover,
+.publisher-post-card:focus-visible {
+  border-color: #f19ab0;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.1);
+  transform: translateY(-1px);
 }
 
 .publisher-post-card.text-only {
@@ -996,6 +1004,33 @@ a {
   font-size: 18px;
   line-height: 1.35;
   font-weight: 900;
+}
+
+.post-context {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.42;
+  font-weight: 500;
+}
+
+.post-read-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 10px;
+  padding: 0;
+  color: var(--red);
+  background: transparent;
+  border: 0;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.post-read-more svg {
+  width: 14px;
+  height: 14px;
 }
 
 .publisher-post-card p {
@@ -1990,6 +2025,69 @@ a {
   border: 1px solid #fecdd3;
   border-radius: 18px;
   box-shadow: 0 20px 50px rgba(17, 24, 39, 0.24);
+}
+
+.feed-alert-modal {
+  width: min(680px, 100%);
+  max-height: min(88vh, 820px);
+  display: grid;
+  gap: 16px;
+  overflow: auto;
+  padding: 22px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.24);
+}
+
+.feed-alert-modal .post-time {
+  margin-top: 7px;
+}
+
+.feed-alert-modal h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(22px, 4vw, 32px);
+  line-height: 1.2;
+  font-weight: 900;
+}
+
+.feed-alert-context {
+  margin: 0;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.feed-alert-image {
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+  padding: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+}
+
+.feed-alert-image img {
+  display: block;
+  width: min(100%, 440px);
+  max-height: 620px;
+  object-fit: contain;
+  border-radius: 9px;
+}
+
+.feed-alert-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.feed-alert-footer svg {
+  color: var(--red);
 }
 
 .modal-head {

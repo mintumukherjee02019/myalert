@@ -17,6 +17,7 @@ const state = {
   savedAlerts: [],
   updates: [],
   publisherPosts: [],
+  feedAlertOverlay: null,
   alertDetail: null,
   alertDetailPublisher: null,
   alertDetailId: "",
@@ -268,6 +269,18 @@ function showActionDialog(kind, title, message) {
 
 function closeActionDialog() {
   state.actionDialog = null;
+  render();
+}
+
+function openFeedAlert(alertId) {
+  const update = (state.publisherPosts || []).find((item) => item.id === alertId);
+  if (!update) return;
+  state.feedAlertOverlay = update;
+  render();
+}
+
+function closeFeedAlert() {
+  state.feedAlertOverlay = null;
   render();
 }
 
@@ -802,7 +815,7 @@ function footer() {
 }
 
 function appShell(content, active = "") {
-  return `<div class="page">${header(active)}<main>${content}</main>${footer()}${qrScannerModal()}${apiRequestSentDialog()}${actionDialog()}</div>`;
+  return `<div class="page">${header(active)}<main>${content}</main>${footer()}${qrScannerModal()}${apiRequestSentDialog()}${actionDialog()}${feedAlertDialog()}</div>`;
 }
 
 function qrScannerModal() {
@@ -853,6 +866,30 @@ function actionDialog() {
         <h2 id="action-dialog-title">${escapeHtml(state.actionDialog.title)}</h2>
         <p>${escapeHtml(state.actionDialog.message)}</p>
         <button class="primary-btn" type="button" data-action-dialog-close>OK</button>
+      </section>
+    </div>
+  `;
+}
+
+function feedAlertDialog() {
+  const update = state.feedAlertOverlay;
+  if (!update) return "";
+  const topicTitle = update.topics?.[0]?.title || "General";
+  const body = update.body || "This update was sent by the publisher.";
+  return `
+    <div class="modal-backdrop open feed-alert-backdrop" data-feed-alert-close>
+      <section class="feed-alert-modal" role="dialog" aria-modal="true" aria-labelledby="feed-alert-title" data-feed-alert-dialog>
+        <div class="modal-head">
+          <div>
+            <span class="post-chip">${escapeHtml(topicTitle)}</span>
+            <p class="post-time">${escapeHtml(formatPostTime(update.sentAt || update.createdAt))}</p>
+          </div>
+          <button class="icon-btn" type="button" data-feed-alert-close aria-label="Close alert">${icons.close}</button>
+        </div>
+        <h2 id="feed-alert-title">${escapeHtml(body)}</h2>
+        ${update.contextSummary ? `<p class="feed-alert-context">${escapeHtml(update.contextSummary)}</p>` : ""}
+        ${update.imageUrl ? `<div class="feed-alert-image"><img src="${escapeHtml(update.imageUrl)}" alt="" onerror="this.parentElement.remove()" /></div>` : ""}
+        <div class="feed-alert-footer">${icons.bell}<span>Published by this MyAlert publisher</span></div>
       </section>
     </div>
   `;
@@ -1455,7 +1492,7 @@ function publisherPostCard(update, index) {
   const time = formatPostTime(update.sentAt || update.createdAt);
   const pinned = index === 0 && update.priority === "high";
   return `
-    <article class="publisher-post-card ${update.imageUrl ? "has-image" : "text-only"}">
+    <article class="publisher-post-card ${update.imageUrl ? "has-image" : "text-only"}" data-feed-alert-card="${escapeHtml(update.id)}" role="button" tabindex="0" aria-label="Read alert">
       <div class="post-content">
         <div class="post-topline">
           <span class="post-message-icon">${icons.bell}</span>
@@ -1473,8 +1510,10 @@ function publisherPostCard(update, index) {
             <h3>${escapeHtml(body)}</h3>
           </div>
         </div>
+        ${update.contextSummary ? `<p class="post-context">${escapeHtml(update.contextSummary)}</p>` : ""}
+        <button class="post-read-more" type="button" data-feed-alert-open="${escapeHtml(update.id)}">Read more ${icons.chevron}</button>
       </div>
-      ${update.imageUrl ? `<div class="post-media"><img src="${escapeHtml(update.imageUrl)}" alt="" loading="lazy" /></div>` : ""}
+      ${update.imageUrl ? `<div class="post-media"><img src="${escapeHtml(update.imageUrl)}" alt="" loading="lazy" onerror="this.parentElement.remove(); this.closest('.publisher-post-card')?.classList.replace('has-image','text-only')" /></div>` : ""}
     </article>
   `;
 }
@@ -2795,6 +2834,31 @@ function bindEvents() {
     });
   });
   document.querySelector("[data-action-dialog-close]")?.addEventListener("click", closeActionDialog);
+  document.querySelectorAll("[data-feed-alert-card]").forEach((card) => {
+    const open = () => openFeedAlert(card.dataset.feedAlertCard);
+    card.addEventListener("click", (event) => {
+      if (event.target.closest("button")) return;
+      open();
+    });
+    card.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        open();
+      }
+    });
+  });
+  document.querySelectorAll("[data-feed-alert-open]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      openFeedAlert(button.dataset.feedAlertOpen);
+    });
+  });
+  document.querySelectorAll("[data-feed-alert-close]").forEach((element) => {
+    element.addEventListener("click", (event) => {
+      if (element.matches(".feed-alert-backdrop") && event.target !== element) return;
+      closeFeedAlert();
+    });
+  });
   document.querySelector("[data-menu-open]")?.addEventListener("click", openMenu);
   document.querySelectorAll("[data-menu-close]").forEach((el) => el.addEventListener("click", closeMenu));
   document.querySelector("[data-search-input]")?.addEventListener("input", (event) => {
