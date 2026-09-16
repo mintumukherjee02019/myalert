@@ -851,9 +851,10 @@ a {
 
 .publisher-post-card {
   display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(150px, 34%);
   gap: 12px;
   align-items: start;
-  padding: 16px;
+  padding: 12px;
   overflow: hidden;
   background:
     radial-gradient(circle at 12% 12%, rgba(255, 228, 232, 0.95), transparent 32%),
@@ -861,8 +862,15 @@ a {
   border-color: #fb9aaa;
 }
 
+.publisher-post-card.text-only {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .post-media {
-  width: min(100%, 360px);
+  width: 100%;
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
   overflow: hidden;
   border: 1px solid #fecdd3;
   border-radius: 14px;
@@ -902,13 +910,15 @@ a {
 
 .post-content {
   min-width: 0;
+  grid-column: 1;
+  grid-row: 1;
 }
 
-.post-message {
+.post-topline {
   display: grid;
   grid-template-columns: 38px minmax(0, 1fr);
   gap: 10px;
-  align-items: start;
+  align-items: center;
 }
 
 .post-message-icon {
@@ -924,6 +934,22 @@ a {
 .post-message-icon svg {
   width: 20px;
   height: 20px;
+}
+
+.post-meta-block {
+  min-width: 0;
+}
+
+.post-label {
+  display: block;
+  margin: 14px 0 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.post-message {
+  min-width: 0;
 }
 
 .post-meta-row {
@@ -958,7 +984,7 @@ a {
 }
 
 .post-time {
-  margin-left: auto;
+  display: block;
   color: var(--muted);
   font-size: 13px;
   font-weight: 700;
@@ -2184,12 +2210,20 @@ a {
   }
 
   .publisher-post-card {
+    grid-template-columns: 1fr;
     gap: 10px;
     padding: 12px;
   }
 
   .post-media {
     width: min(100%, 300px);
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .post-content {
+    grid-column: 1;
+    grid-row: 1;
   }
 
   .post-icon {
@@ -2202,7 +2236,7 @@ a {
     font-size: 16px;
   }
 
-  .post-message {
+  .post-topline {
     grid-template-columns: 34px minmax(0, 1fr);
     gap: 8px;
   }

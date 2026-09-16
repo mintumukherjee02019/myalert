@@ -1455,16 +1455,23 @@ function publisherPostCard(update, index) {
   const time = formatPostTime(update.sentAt || update.createdAt);
   const pinned = index === 0 && update.priority === "high";
   return `
-    <article class="publisher-post-card">
+    <article class="publisher-post-card ${update.imageUrl ? "has-image" : "text-only"}">
       <div class="post-content">
-        <div class="post-meta-row">
-          <span class="post-chip">${escapeHtml(topicTitle)}</span>
-          ${pinned ? `<span class="post-pin">${icons.pin} Pinned</span>` : ""}
-          <span class="post-time">${escapeHtml(time)}</span>
+        <div class="post-topline">
+          <span class="post-message-icon">${icons.bell}</span>
+          <div class="post-meta-block">
+            <div class="post-meta-row">
+              <span class="post-chip">${escapeHtml(topicTitle)}</span>
+              ${pinned ? `<span class="post-pin">${icons.pin} Pinned</span>` : ""}
+            </div>
+            <span class="post-time">${escapeHtml(time)}</span>
+          </div>
         </div>
         <div class="post-message">
-          <span class="post-message-icon">${icons.bell}</span>
-          <h3>${escapeHtml(body)}</h3>
+          <div>
+            <span class="post-label">Alert</span>
+            <h3>${escapeHtml(body)}</h3>
+          </div>
         </div>
       </div>
       ${update.imageUrl ? `<div class="post-media"><img src="${escapeHtml(update.imageUrl)}" alt="" loading="lazy" /></div>` : ""}
