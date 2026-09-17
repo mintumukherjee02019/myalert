@@ -1075,6 +1075,10 @@ function publisherCard(publisher) {
         <a class="secondary-btn" href="/p/${encodeURIComponent(
           publisher.slug
         )}" data-link data-focus-alerts>View Alerts ${icons.chevron}</a>
+        <span class="publisher-code" aria-label="Publisher code">
+          <span class="publisher-code-label">Code</span>
+          <strong>${escapeHtml(publisher.code || "-")}</strong>
+        </span>
       </div>
     </article>
   `;
@@ -1307,6 +1311,7 @@ function normalizePublisher(raw = {}) {
     slug: raw.slug || raw.publicSlug || raw.id,
     category: raw.category || raw.categories?.[0] || raw.businessType || "Publisher",
     categories: Array.isArray(raw.categories) && raw.categories.length ? raw.categories : ["Publisher"],
+    code: raw.code || raw.publicCode || "",
     location:
       raw.location ||
       raw.city ||
