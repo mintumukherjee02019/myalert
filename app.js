@@ -2958,16 +2958,18 @@ function bindEvents() {
       }
     });
   });
-  document.querySelector("[data-open-whatsapp-consent]")?.addEventListener("click", () => {
-    state.feedAlertOverlay = null;
-    state.publisherTab = "topics";
-    state.publisherFocusPending = true;
-    const alertRoute = currentAlertRoute();
-    if (alertRoute) {
-      routeTo(`/p/${encodeURIComponent(alertRoute.publisherIdentifier)}?tab=topics`);
-    } else {
-      render();
-    }
+  document.querySelectorAll("[data-open-whatsapp-consent]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.feedAlertOverlay = null;
+      state.publisherTab = "topics";
+      state.publisherFocusPending = true;
+      const alertRoute = currentAlertRoute();
+      if (alertRoute) {
+        routeTo(`/p/${encodeURIComponent(alertRoute.publisherIdentifier)}?tab=topics`);
+      } else {
+        render();
+      }
+    });
   });
   document.querySelectorAll("[data-topic-id]").forEach((input) => {
     if (input.type !== "checkbox") return;
