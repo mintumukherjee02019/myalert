@@ -291,7 +291,7 @@ function closeFeedAlert() {
 
 function openWhatsappConsent() {
   state.feedAlertOverlay = null;
-  state.publisherTab = "topics";
+  setPublisherTab("topics");
   state.publisherFocusPending = true;
   const alertRoute = currentAlertRoute();
   if (alertRoute) {
@@ -696,6 +696,15 @@ async function shareAlertPdf() {
 function routeTo(path) {
   history.pushState({}, "", path);
   syncRoute();
+}
+
+function setPublisherTab(tab) {
+  state.publisherTab = tab === "posts" ? "posts" : "topics";
+  const url = new URL(window.location.href);
+  if (state.publisherTab === "posts") url.searchParams.set("tab", "posts");
+  else url.searchParams.delete("tab");
+  history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+  state.query = new URLSearchParams(url.search);
 }
 
 function syncRoute() {
@@ -2961,7 +2970,7 @@ function bindEvents() {
     button.addEventListener("click", () => {
       const nextTab = button.dataset.publisherTab === "posts" ? "posts" : "topics";
       if (state.publisherTab === nextTab) return;
-      state.publisherTab = nextTab;
+      setPublisherTab(nextTab);
       render();
       if (nextTab === "posts" && !state.publisherPostsLoaded) {
         fetchPublisherPosts({ reset: true }).catch((error) =>
