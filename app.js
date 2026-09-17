@@ -1533,12 +1533,6 @@ function publisherPostsSection(publisher) {
           ? `<div class="load-more-wrap"><button class="secondary-btn load-more-btn" type="button" data-publisher-posts-load-more ${
               state.loadingPublisherPosts ? "disabled" : ""
             }>${state.loadingPublisherPosts ? "Loading more posts..." : "Load more updates"}</button></div>`
-          : posts.length
-          ? `<div class="posts-end">
-              <img src="/assets/share/myalert-preview.png" alt="" />
-              <strong>You are all caught up</strong>
-              <span>End of posts from this publisher.</span>
-            </div>`
           : ""
       }
     </section>

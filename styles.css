@@ -1132,37 +1132,6 @@ a {
   height: 24px;
 }
 
-.posts-end {
-  display: grid;
-  justify-items: center;
-  gap: 5px;
-  margin-top: 18px;
-  padding: 20px 14px;
-  color: var(--muted);
-  text-align: center;
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-}
-
-.posts-end img {
-  width: min(170px, 55vw);
-  height: auto;
-  filter: grayscale(1);
-  opacity: 0.28;
-}
-
-.posts-end strong {
-  color: var(--ink);
-  font-size: 16px;
-  font-weight: 900;
-}
-
-.posts-end span {
-  font-size: 13px;
-  font-weight: 700;
-}
-
 .alert-detail-shell {
   max-width: 900px;
 }
