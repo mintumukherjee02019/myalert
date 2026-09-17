@@ -785,6 +785,8 @@ a {
   align-items: center;
   justify-content: space-between;
   gap: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
 }
 
 .subscribe-cta {
