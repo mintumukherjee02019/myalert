@@ -1443,7 +1443,7 @@ function publisherPage() {
                   </div>
                 </div>
                 <button class="subscribe-cta" type="button" data-open-whatsapp-consent>
-                  ${icons.message}
+                  ${icons.bell}
                   <span>Subscribe to receive alerts</span>
                 </button>
               </div>
