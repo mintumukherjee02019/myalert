@@ -1114,7 +1114,6 @@ async function fetchPublisher(identifier) {
     state.whatsappName = savedContact.verifiedWhatsAppName || savedContact.displayName || state.whatsappName;
     state.whatsappPhone = savedContact.phoneNumber || state.whatsappPhone;
     applySavedWhatsAppVerification();
-    state.publisherFocusPending = true;
     await hydratePublisherSubscription();
   } catch (error) {
     state.error = error.message || "Publisher not found.";
