@@ -1074,7 +1074,7 @@ function publisherCard(publisher) {
       <div class="publisher-foot">
         <a class="secondary-btn" href="/p/${encodeURIComponent(
           publisher.slug
-        )}" data-link data-focus-alerts>View Alerts ${icons.chevron}</a>
+        )}" data-link>View Alerts ${icons.chevron}</a>
         <span class="publisher-code" aria-label="Publisher code">
           <span class="publisher-code-label">Code</span>
           <strong>${escapeHtml(publisher.code || "-")}</strong>
