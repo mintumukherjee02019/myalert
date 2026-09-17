@@ -1812,8 +1812,8 @@ function whatsappCard(canContinue, publisherName) {
                     <p>${verified ? "You can submit your alert preferences now." : "We will send a 4 digit OTP to this WhatsApp number."}</p>
                   </div>
                   ${
-                    verified
-                      ? `<span class="otp-verified-badge">${icons.check} Verified</span>`
+                  verified
+                      ? ""
                       : `<button class="secondary-btn otp-btn" type="button" data-request-wa-otp ${state.whatsappOtpBusy || cooldown > 0 ? "disabled" : ""}>
                           ${cooldown > 0 ? `Resend in ${cooldown}s` : state.whatsappOtpSent ? "Resend OTP" : "Send OTP"}
                         </button>`
@@ -1829,7 +1829,7 @@ function whatsappCard(canContinue, publisherName) {
                       </div>`
                     : ""
                 }
-                <p class="otp-message" data-otp-message>${escapeHtml(state.whatsappOtpMessage)}</p>
+                <p class="otp-message" data-otp-message>${verified ? "" : escapeHtml(state.whatsappOtpMessage)}</p>
               </div>`
             : `<div class="warning-box whatsapp-consent-warning">WhatsApp consent is unchecked, so this publisher will not send alerts to you on WhatsApp. Browser notifications will be used where supported.</div>`
         }
