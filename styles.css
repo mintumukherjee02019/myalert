@@ -760,6 +760,31 @@ a {
   padding: 18px 0 6px;
 }
 
+.subscribe-cta {
+  width: 100%;
+  min-height: 52px;
+  margin: 16px 0 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #fff;
+  background: var(--red);
+  border: 1px solid var(--red);
+  border-radius: 12px;
+  box-shadow: 0 10px 22px rgba(225, 29, 72, 0.18);
+  font-weight: 800;
+}
+
+.subscribe-cta:hover {
+  background: var(--red-dark);
+}
+
+.subscribe-cta svg {
+  width: 21px;
+  height: 21px;
+}
+
 .publisher-identity-main {
   display: grid;
   grid-template-columns: 60px 1fr;

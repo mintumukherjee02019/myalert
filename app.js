@@ -1412,6 +1412,10 @@ function publisherPage() {
                   "Important updates, alerts and announcements from this publisher."
               )}</p>
             </section>
+            <button class="subscribe-cta" type="button" data-open-whatsapp-consent>
+              ${icons.message}
+              <span>Subscribe to receive alerts</span>
+            </button>
             ${publisherTabs(activeTab)}
             ${
               activeTab === "posts"
@@ -2939,6 +2943,11 @@ function bindEvents() {
         );
       }
     });
+  });
+  document.querySelector("[data-open-whatsapp-consent]")?.addEventListener("click", () => {
+    state.publisherTab = "topics";
+    state.publisherFocusPending = true;
+    render();
   });
   document.querySelectorAll("[data-topic-id]").forEach((input) => {
     if (input.type !== "checkbox") return;
