@@ -1423,28 +1423,30 @@ function publisherPage() {
           <div>
             <a href="/" class="back-link" data-link>${icons.arrow} Back</a>
             <section class="publisher-identity">
-              <div class="publisher-identity-main">
-                <div class="publisher-logo">${publisher.logoUrl ? `<img src="${escapeHtml(
-                  publisher.logoUrl
-                )}" alt="" />` : initials(publisher.name)}</div>
-                <div>
-                  <h1 class="page-title">${escapeHtml(publisher.name || "Publisher")} ${
-      publisher.verified !== false ? `<span class="verified">${icons.check}</span>` : ""
-    }</h1>
-                  <p class="publisher-meta">${escapeHtml(
-                    publisher.category || "Publisher"
-                  )} &bull; ${escapeHtml(publisher.city || publisher.location || "MyAlert")}</p>
+              <div class="publisher-identity-header">
+                <div class="publisher-identity-main">
+                  <div class="publisher-logo">${publisher.logoUrl ? `<img src="${escapeHtml(
+                    publisher.logoUrl
+                  )}" alt="" />` : initials(publisher.name)}</div>
+                  <div>
+                    <h1 class="page-title">${escapeHtml(publisher.name || "Publisher")} ${
+        publisher.verified !== false ? `<span class="verified">${icons.check}</span>` : ""
+      }</h1>
+                    <p class="publisher-meta">${escapeHtml(
+                      publisher.category || "Publisher"
+                    )} &bull; ${escapeHtml(publisher.city || publisher.location || "MyAlert")}</p>
+                  </div>
                 </div>
+                <button class="subscribe-cta" type="button" data-open-whatsapp-consent>
+                  ${icons.message}
+                  <span>Subscribe to receive alerts</span>
+                </button>
               </div>
               <p class="page-subtitle">${escapeHtml(
                 publisher.description ||
                   "Important updates, alerts and announcements from this publisher."
               )}</p>
             </section>
-            <button class="subscribe-cta" type="button" data-open-whatsapp-consent>
-              ${icons.message}
-              <span>Subscribe to receive alerts</span>
-            </button>
             ${publisherTabs(activeTab)}
             ${
               activeTab === "posts"
