@@ -289,6 +289,18 @@ function closeFeedAlert() {
   render();
 }
 
+function openWhatsappConsent() {
+  state.feedAlertOverlay = null;
+  state.publisherTab = "topics";
+  state.publisherFocusPending = true;
+  const alertRoute = currentAlertRoute();
+  if (alertRoute) {
+    routeTo(`/p/${encodeURIComponent(alertRoute.publisherIdentifier)}?tab=topics`);
+  } else {
+    render();
+  }
+}
+
 function otpCooldownSeconds() {
   return Math.max(0, Math.ceil((state.whatsappOtpCooldownUntil - Date.now()) / 1000));
 }
@@ -2959,16 +2971,10 @@ function bindEvents() {
     });
   });
   document.querySelectorAll("[data-open-whatsapp-consent]").forEach((button) => {
-    button.addEventListener("click", () => {
-      state.feedAlertOverlay = null;
-      state.publisherTab = "topics";
-      state.publisherFocusPending = true;
-      const alertRoute = currentAlertRoute();
-      if (alertRoute) {
-        routeTo(`/p/${encodeURIComponent(alertRoute.publisherIdentifier)}?tab=topics`);
-      } else {
-        render();
-      }
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      openWhatsappConsent();
     });
   });
   document.querySelectorAll("[data-topic-id]").forEach((input) => {
