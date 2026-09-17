@@ -1440,6 +1440,12 @@ a {
   min-width: 0;
 }
 
+.whatsapp-alert-card > div,
+.whatsapp-alert-card .small-text {
+  width: 100%;
+  box-sizing: border-box;
+}
+
 .delivery-title {
   display: flex;
   gap: 12px;
@@ -1535,6 +1541,28 @@ a {
 .otp-panel.verified {
   background: var(--success-bg);
   border-color: #bbf7d0;
+}
+
+.otp-panel.verified,
+.otp-panel.verified .otp-panel-head,
+.otp-panel.verified .otp-panel-head > div,
+.otp-panel.verified .otp-message {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.otp-panel.verified .otp-panel-head {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.otp-panel.verified .otp-panel-head strong,
+.otp-panel.verified .otp-panel-head p {
+  display: block;
+  width: 100%;
+  max-width: none;
 }
 
 .otp-panel-head,
