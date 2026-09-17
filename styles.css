@@ -1436,6 +1436,10 @@ a {
   scroll-margin-top: 86px;
 }
 
+.whatsapp-alert-card > div {
+  min-width: 0;
+}
+
 .delivery-title {
   display: flex;
   gap: 12px;
@@ -1542,6 +1546,10 @@ a {
 
 .otp-panel-head > div {
   min-width: 0;
+}
+
+.otp-panel-head .otp-verified-badge {
+  justify-self: start;
 }
 
 .otp-panel-head strong {

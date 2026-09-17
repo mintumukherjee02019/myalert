@@ -2120,6 +2120,12 @@ async function verifyWhatsAppOtp() {
     otpCooldownTimer = 0;
     state.whatsappOtpMessage = payload.message || "WhatsApp number verified.";
     toast("WhatsApp number verified.");
+    try {
+      await savePreferences();
+    } catch (saveError) {
+      state.whatsappOtpMessage = `Number verified. ${saveError.message || "Please submit your alert preferences."}`;
+      toast(saveError.message || "Number verified. Could not save preferences automatically.");
+    }
   } catch (error) {
     state.whatsappOtpMessage = error.message || "OTP verification failed.";
   } finally {
