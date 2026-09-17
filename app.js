@@ -1074,7 +1074,7 @@ function publisherCard(publisher) {
       <div class="publisher-foot">
         <a class="secondary-btn" href="/p/${encodeURIComponent(
           publisher.slug
-        )}" data-link>View Alerts ${icons.chevron}</a>
+        )}" data-link data-view-alerts>View Alerts ${icons.chevron}</a>
         <span class="publisher-code" aria-label="Publisher code">
           <span class="publisher-code-label">Code</span>
           <strong>${escapeHtml(publisher.code || "-")}</strong>
@@ -2877,6 +2877,9 @@ function bindEvents() {
       const href = link.getAttribute("href");
       if (!href || href.startsWith("http")) return;
       event.preventDefault();
+      if (link.hasAttribute("data-view-alerts")) {
+        state.publisherFocusPending = false;
+      }
       if (link.hasAttribute("data-focus-alerts")) {
         state.publisherFocusPending = true;
         state.publisherTab = "topics";
