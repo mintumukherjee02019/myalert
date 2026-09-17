@@ -2129,6 +2129,41 @@ a {
   color: var(--red);
 }
 
+.feed-alert-subscribe {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 48px;
+  padding: 11px 16px;
+  color: #fff;
+  background: var(--red);
+  border: 1px solid var(--red);
+  border-radius: 12px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.feed-alert-subscribe:hover {
+  background: #be123c;
+  transform: translateY(-1px);
+}
+
+.feed-alert-subscribe:focus-visible {
+  outline: 3px solid rgba(225, 29, 72, 0.24);
+  outline-offset: 2px;
+}
+
+.feed-alert-subscribe svg {
+  width: 19px;
+  height: 19px;
+  flex: 0 0 auto;
+}
+
 .modal-head {
   display: flex;
   align-items: flex-start;

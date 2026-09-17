@@ -894,7 +894,15 @@ function feedAlertDialog() {
         <h2 id="feed-alert-title">${escapeHtml(body)}</h2>
         ${update.contextSummary ? `<p class="feed-alert-context">${escapeHtml(update.contextSummary)}</p>` : ""}
         ${update.imageUrl ? `<div class="feed-alert-image"><img src="${escapeHtml(update.imageUrl)}" alt="" onerror="this.parentElement.remove()" /></div>` : ""}
-        <div class="feed-alert-footer">${icons.bell}<span>Published by this MyAlert publisher</span></div>
+        <div class="feed-alert-footer">
+          ${icons.bell}<span>Published by this MyAlert publisher</span>
+        </div>
+        <button class="feed-alert-subscribe" type="button" data-open-whatsapp-consent>
+          ${icons.bell}
+          <span>Subscribe Free to get alert from ${escapeHtml(
+            state.alertDetailPublisher?.name || state.publisher?.name || "this publisher"
+          )}</span>
+        </button>
       </section>
     </div>
   `;
@@ -2951,9 +2959,15 @@ function bindEvents() {
     });
   });
   document.querySelector("[data-open-whatsapp-consent]")?.addEventListener("click", () => {
+    state.feedAlertOverlay = null;
     state.publisherTab = "topics";
     state.publisherFocusPending = true;
-    render();
+    const alertRoute = currentAlertRoute();
+    if (alertRoute) {
+      routeTo(`/p/${encodeURIComponent(alertRoute.publisherIdentifier)}?tab=topics`);
+    } else {
+      render();
+    }
   });
   document.querySelectorAll("[data-topic-id]").forEach((input) => {
     if (input.type !== "checkbox") return;
