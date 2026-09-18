@@ -85,6 +85,8 @@ let apiRequestCountdownTimer = 0;
 const icons = {
   bell:
     '<svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/></svg>',
+  whatsapp:
+    '<span class="whatsapp-glyph" aria-hidden="true">WA</span>',
   search:
     '<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>',
   qr:
@@ -841,7 +843,28 @@ function footer() {
 }
 
 function appShell(content, active = "") {
-  return `<div class="page">${header(active)}<main>${content}</main>${footer()}${qrScannerModal()}${apiRequestSentDialog()}${actionDialog()}${feedAlertDialog()}</div>`;
+  return `<div class="page">${header(active)}${whatsappPublisherBanner()}<main>${content}</main>${footer()}${qrScannerModal()}${apiRequestSentDialog()}${actionDialog()}${feedAlertDialog()}</div>`;
+}
+
+function whatsappPublisherBanner() {
+  const whatsappLink = "https://wa.me/919907366245?text=Hi%20MyAlert";
+  return `
+    <aside class="whatsapp-publisher-banner" aria-label="Start publishing alerts">
+      <div class="whatsapp-publisher-banner-inner">
+        <div class="whatsapp-publisher-mark" aria-hidden="true">${icons.whatsapp}</div>
+        <div class="whatsapp-publisher-copy">
+          <strong>Start Publishing your alerts with your audience</strong>
+          <span>for free</span>
+          <small>Just message Hi to get started. No separate app required.</small>
+        </div>
+        <a class="whatsapp-publisher-cta" href="${whatsappLink}" target="_blank" rel="noopener noreferrer">
+          <span>${icons.whatsapp}</span>
+          <span>Chat on WhatsApp<br /><b>9907366245</b></span>
+          ${icons.chevron}
+        </a>
+      </div>
+    </aside>
+  `;
 }
 
 function qrScannerModal() {

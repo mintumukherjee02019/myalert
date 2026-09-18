@@ -2522,3 +2522,152 @@ a {
     animation-duration: 0.001ms !important;
   }
 }
+.whatsapp-publisher-banner {
+  padding: 8px 16px 0;
+  background: #fff;
+}
+
+.whatsapp-publisher-banner-inner {
+  width: min(100%, 1200px);
+  min-height: 58px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border: 1px solid #f3cbd5;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #fff 0%, #fff8fa 100%);
+  box-shadow: 0 5px 18px rgba(225, 29, 72, 0.08);
+}
+
+.whatsapp-publisher-mark {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: #18b957;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.whatsapp-glyph {
+  display: inline-grid;
+  place-items: center;
+  width: 1.55em;
+  height: 1.55em;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  font-size: 0.43em;
+  letter-spacing: 0;
+}
+
+.whatsapp-publisher-copy {
+  min-width: 0;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.whatsapp-publisher-copy strong {
+  color: #172033;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.whatsapp-publisher-copy span {
+  color: #e11d48;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.whatsapp-publisher-copy small {
+  margin-top: 2px;
+  overflow: hidden;
+  color: #657084;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.whatsapp-publisher-cta {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  border-radius: 9px;
+  color: #fff;
+  background: #ed1749;
+  box-shadow: 0 5px 12px rgba(237, 23, 73, 0.2);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.05;
+  text-decoration: none;
+}
+
+.whatsapp-publisher-cta > span:first-child {
+  font-size: 18px;
+}
+
+.whatsapp-publisher-cta b {
+  font-size: 11px;
+  letter-spacing: 0.2px;
+}
+
+.whatsapp-publisher-cta svg {
+  width: 15px;
+  height: 15px;
+}
+
+.whatsapp-publisher-cta:hover {
+  background: #c8103c;
+}
+
+@media (max-width: 560px) {
+  .whatsapp-publisher-banner {
+    padding: 6px 8px 0;
+  }
+
+  .whatsapp-publisher-banner-inner {
+    gap: 7px;
+    padding: 5px;
+  }
+
+  .whatsapp-publisher-mark {
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
+  }
+
+  .whatsapp-publisher-copy strong {
+    font-size: 10px;
+  }
+
+  .whatsapp-publisher-copy span {
+    font-size: 9px;
+  }
+
+  .whatsapp-publisher-copy small {
+    font-size: 8px;
+  }
+
+  .whatsapp-publisher-cta {
+    gap: 4px;
+    padding: 5px 7px;
+    font-size: 8px;
+  }
+
+  .whatsapp-publisher-cta > span:first-child {
+    font-size: 15px;
+  }
+
+  .whatsapp-publisher-cta b {
+    font-size: 9px;
+  }
+}
