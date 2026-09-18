@@ -1080,7 +1080,7 @@ function publisherCard(publisher) {
         <div>
           <h3 class="publisher-name">
             ${escapeHtml(publisher.name)}
-            ${publisher.verified ? `<span class="verified">${icons.check}</span>` : ""}
+            ${publisher.verified === true ? `<span class="verified">${icons.check}</span>` : ""}
           </h3>
           <div class="publisher-meta">${escapeHtml(publisher.category)} &bull; ${escapeHtml(
     publisher.location
@@ -1343,7 +1343,7 @@ function normalizePublisher(raw = {}) {
       raw.shortDescription ||
       "Important updates, alerts and announcements from this publisher.",
     logoUrl: raw.logoUrl || raw.storeImage?.url || "",
-    verified: raw.verified !== false,
+      verified: raw.verified === true,
     topics: topicLabels,
   };
 }
@@ -1505,7 +1505,7 @@ function publisherPage() {
                   )}" alt="" />` : initials(publisher.name)}</div>
                   <div>
                     <h1 class="page-title">${escapeHtml(publisher.name || "Publisher")} ${
-        publisher.verified !== false ? `<span class="verified">${icons.check}</span>` : ""
+                publisher.verified === true ? `<span class="verified">${icons.check}</span>` : ""
       }</h1>
                     <p class="publisher-meta">${escapeHtml(
                       publisher.category || "Publisher"
@@ -1702,7 +1702,7 @@ function alertDetailPage() {
               )}" alt="" />` : initials(publisher.name)}</div>
               <div>
                 <h1 class="page-title">${escapeHtml(publisher.name || "Publisher")} ${
-      publisher.verified !== false ? `<span class="verified">${icons.check}</span>` : ""
+                  publisher.verified === true ? `<span class="verified">${icons.check}</span>` : ""
     }</h1>
                 <p class="publisher-meta">${escapeHtml(
                   publisher.category || "Publisher"
@@ -2499,7 +2499,7 @@ function subscriptionCard(item) {
       <div class="publisher-top">
         <div class="avatar">${initials(publisher.name)}</div>
         <div>
-          <h3 class="publisher-name">${escapeHtml(publisher.name || "Publisher")} <span class="verified">${icons.check}</span></h3>
+          <h3 class="publisher-name">${escapeHtml(publisher.name || "Publisher")} ${publisher.verified === true ? `<span class="verified">${icons.check}</span>` : ""}</h3>
           <div class="publisher-meta">Browser Push: ${hasBrowserPush ? "ON" : "OFF"} &bull; WhatsApp: ${
     whatsappOn ? "ON" : "OFF"
   }</div>
