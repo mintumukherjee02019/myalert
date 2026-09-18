@@ -859,7 +859,7 @@ function whatsappPublisherBanner() {
         </div>
         <a class="whatsapp-publisher-cta" href="${whatsappLink}" target="_blank" rel="noopener noreferrer">
           <span>${icons.whatsapp}</span>
-          <span>Chat on WhatsApp</span>
+          <span>Chat on WhatsApp<br /><b>9907366245</b></span>
           ${icons.chevron}
         </a>
       </div>
