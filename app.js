@@ -1004,14 +1004,12 @@ function homePage() {
                 <button class="secondary-btn code-submit-btn" data-find-code>Find Publisher</button>
               </div>
             </section>
-          </div>
-          <div class="hero-card">
-            <ul class="trust-list">
-              <li>${icons.check} No forced app install</li>
-              <li>${icons.check} No noisy group chats</li>
-              <li>${icons.check} Easy unsubscribe</li>
-              <li>${icons.check} Browser push and WhatsApp choices</li>
-            </ul>
+            <div class="trust-strip" aria-label="MyAlert benefits">
+              <div class="trust-strip-item"><span class="trust-strip-icon">${icons.check}</span><span>No forced<br />app install</span></div>
+              <div class="trust-strip-item"><span class="trust-strip-icon">${icons.check}</span><span>No noisy<br />group chats</span></div>
+              <div class="trust-strip-item"><span class="trust-strip-icon">${icons.check}</span><span>Easy<br />unsubscribe</span></div>
+              <div class="trust-strip-item"><span class="trust-strip-icon">${icons.check}</span><span>Browser push<br />and WhatsApp choices</span></div>
+            </div>
           </div>
         </div>
         <div class="shell">

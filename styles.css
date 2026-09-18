@@ -256,6 +256,52 @@ a {
   font-weight: 700;
 }
 
+.trust-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 14px;
+  padding: 9px 6px;
+  background: linear-gradient(90deg, #fffafb, #fff);
+  border: 1px solid #f8dfe5;
+  border-radius: 12px;
+  box-shadow: 0 5px 18px rgba(225, 29, 72, 0.08);
+}
+
+.trust-strip-item {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 9px;
+  color: #172033;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.08;
+  text-align: left;
+}
+
+.trust-strip-item + .trust-strip-item {
+  border-left: 1px solid #f2dce2;
+}
+
+.trust-strip-icon {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  display: grid;
+  place-items: center;
+  color: #ed1749;
+  background: #fff0f3;
+  border-radius: 50%;
+}
+
+.trust-strip-icon svg {
+  width: 12px;
+  height: 12px;
+  stroke-width: 3;
+}
+
 .search-panel,
 .code-card,
 .card,
@@ -2630,6 +2676,27 @@ a {
 }
 
 @media (max-width: 560px) {
+  .trust-strip {
+    padding: 8px 2px;
+  }
+
+  .trust-strip-item {
+    gap: 3px;
+    padding: 0 3px;
+    font-size: 8px;
+  }
+
+  .trust-strip-icon {
+    width: 17px;
+    height: 17px;
+    flex-basis: 17px;
+  }
+
+  .trust-strip-icon svg {
+    width: 10px;
+    height: 10px;
+  }
+
   .whatsapp-publisher-banner {
     padding: 6px 8px 0;
   }
