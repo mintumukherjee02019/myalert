@@ -2645,7 +2645,7 @@ a {
   color: #fff;
   background: #ed1749;
   box-shadow: 0 5px 12px rgba(237, 23, 73, 0.2);
-  font-size: 10px;
+  font-size: 10.5px;
   white-space: nowrap;
   font-weight: 700;
   line-height: 1.05;
@@ -2663,8 +2663,20 @@ a {
 }
 
 .whatsapp-publisher-cta b {
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.2px;
+}
+
+.whatsapp-cta-label {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.05;
+}
+
+.whatsapp-cta-label > span {
+  font-size: 10px;
+  font-weight: 800;
 }
 
 .whatsapp-publisher-cta svg {
@@ -2739,6 +2751,10 @@ a {
   }
 
   .whatsapp-publisher-cta b {
-    font-size: 9px;
+    font-size: 10px;
+  }
+
+  .whatsapp-cta-label > span {
+    font-size: 8px;
   }
 }
