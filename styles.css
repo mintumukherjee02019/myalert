@@ -2569,18 +2569,18 @@ a {
   }
 }
 .whatsapp-publisher-banner {
-  padding: 8px 16px 0;
+  padding: 10px 16px 0;
   background: #fff;
 }
 
 .whatsapp-publisher-banner-inner {
   width: min(100%, 1200px);
-  min-height: 58px;
+  min-height: 62px;
   margin: 0 auto;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 8px;
+  gap: 12px;
+  padding: 7px 9px;
   border: 1px solid #f3cbd5;
   border-radius: 12px;
   background: linear-gradient(90deg, #fff 0%, #fff8fa 100%);
@@ -2588,27 +2588,19 @@ a {
 }
 
 .whatsapp-publisher-mark {
-  width: 40px;
-  height: 40px;
-  flex: 0 0 40px;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
   display: grid;
   place-items: center;
   border-radius: 50%;
   color: #fff;
   background: #18b957;
-  font-size: 11px;
-  font-weight: 800;
 }
 
-.whatsapp-glyph {
-  display: inline-grid;
-  place-items: center;
-  width: 1.55em;
-  height: 1.55em;
-  border: 2px solid currentColor;
-  border-radius: 50%;
-  font-size: 0.43em;
-  letter-spacing: 0;
+.whatsapp-publisher-mark svg {
+  width: 24px;
+  height: 24px;
 }
 
 .whatsapp-publisher-copy {
@@ -2622,6 +2614,7 @@ a {
 .whatsapp-publisher-copy strong {
   color: #172033;
   font-size: 12px;
+  letter-spacing: 0;
   font-weight: 800;
 }
 
@@ -2641,24 +2634,32 @@ a {
 }
 
 .whatsapp-publisher-cta {
-  min-height: 40px;
+  min-width: 145px;
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
   gap: 7px;
   flex: 0 0 auto;
-  padding: 6px 10px;
+  padding: 6px 11px;
   border-radius: 9px;
   color: #fff;
   background: #ed1749;
   box-shadow: 0 5px 12px rgba(237, 23, 73, 0.2);
   font-size: 10px;
+  white-space: nowrap;
   font-weight: 700;
   line-height: 1.05;
   text-decoration: none;
 }
 
 .whatsapp-publisher-cta > span:first-child {
-  font-size: 18px;
+  display: grid;
+  place-items: center;
+}
+
+.whatsapp-publisher-cta > span:first-child svg {
+  width: 20px;
+  height: 20px;
 }
 
 .whatsapp-publisher-cta b {
@@ -2698,22 +2699,23 @@ a {
   }
 
   .whatsapp-publisher-banner {
-    padding: 6px 8px 0;
+    padding: 7px 8px 0;
   }
 
   .whatsapp-publisher-banner-inner {
-    gap: 7px;
-    padding: 5px;
+    gap: 8px;
+    padding: 6px;
   }
 
   .whatsapp-publisher-mark {
-    width: 34px;
-    height: 34px;
-    flex-basis: 34px;
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
   }
 
   .whatsapp-publisher-copy strong {
     font-size: 10px;
+    line-height: 1.05;
   }
 
   .whatsapp-publisher-copy span {
@@ -2725,13 +2727,15 @@ a {
   }
 
   .whatsapp-publisher-cta {
-    gap: 4px;
+    min-width: 130px;
+    gap: 5px;
     padding: 5px 7px;
     font-size: 8px;
   }
 
-  .whatsapp-publisher-cta > span:first-child {
-    font-size: 15px;
+  .whatsapp-publisher-cta > span:first-child svg {
+    width: 17px;
+    height: 17px;
   }
 
   .whatsapp-publisher-cta b {
