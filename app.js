@@ -1367,6 +1367,56 @@ function publisherRoutePath(publisher = state.publisher, suffix = "") {
   return `/p/${encodeURIComponent(identifier)}${suffix}`;
 }
 
+function upsertMeta(attribute, key, content) {
+  let meta = document.head.querySelector(`meta[${attribute}="${key}"]`);
+  if (!meta) {
+    meta = document.createElement("meta");
+    meta.setAttribute(attribute, key);
+    document.head.appendChild(meta);
+  }
+  meta.setAttribute("content", content);
+}
+
+function updateSeoMetadata() {
+  const route = state.route;
+  const alertRoute = currentAlertRoute();
+  const publisher = state.publisher || state.alertDetailPublisher;
+  const isUtilityRoute = ["/search", "/my-alerts", "/history", "/done", "/api-req"].includes(route);
+  const isPublisherRoute = Boolean(publisher && (route.startsWith("/p/") || route.startsWith("/code/") || state.query.get("partner") || state.query.get("code")));
+  const isAlertRoute = Boolean(alertRoute && publisher);
+  const homeTitle = "MyAlert - Free Alerts & Updates from Businesses and Organizations";
+  const homeDescription = "Subscribe to MyAlert to receive updates, offers, announcements and important alerts from businesses, schools, organizations and local services. Choose only the alerts you want.";
+  let title = homeTitle;
+  let description = homeDescription;
+  let canonicalPath = "/";
+  let robots = "index,follow";
+
+  if (isAlertRoute) {
+    const update = state.alertDetail || {};
+    const alertTitle = update.title || update.body || "Alert update";
+    title = `${alertTitle.slice(0, 80)} | ${publisher.name} | MyAlert`;
+    description = (update.contextSummary || update.body || `Latest update from ${publisher.name}.`).slice(0, 160);
+    canonicalPath = `/p/${encodeURIComponent(alertRoute.publisherIdentifier)}/alerts/${encodeURIComponent(alertRoute.alertId)}`;
+  } else if (isPublisherRoute) {
+    title = `${publisher.name} - Offers & Updates | MyAlert`;
+    description = `${publisher.description || `Latest offers, announcements and updates from ${publisher.name}.`} Follow ${publisher.name} on MyAlert to receive future alerts.`.slice(0, 160);
+    canonicalPath = publisherRoutePath(publisher);
+  } else if (isUtilityRoute) {
+    robots = "noindex,nofollow";
+  }
+
+  document.title = title;
+  upsertMeta("name", "description", description);
+  upsertMeta("name", "robots", robots);
+  upsertMeta("property", "og:title", title);
+  upsertMeta("property", "og:description", description);
+  upsertMeta("property", "og:url", `${window.location.origin}${canonicalPath}`);
+  upsertMeta("name", "twitter:title", title);
+  upsertMeta("name", "twitter:description", description);
+  const canonical = document.head.querySelector('link[rel="canonical"]');
+  if (canonical) canonical.href = `${window.location.origin}${canonicalPath}`;
+}
+
 function publisherPage() {
   const identifier = currentPublisherIdentifier();
   const alertRoute = currentAlertRoute();
@@ -2865,6 +2915,7 @@ function render() {
     html = homePage();
   }
   document.getElementById("app").innerHTML = html;
+  updateSeoMetadata();
   bindEvents();
   focusPublisherWhatsappFields();
   window.setTimeout(handleScrollLoaders, 80);

@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /my-alerts
+Disallow: /history
+Disallow: /done
+Disallow: /api-req
+Disallow: /search
+
+Sitemap: https://myalert.in/sitemap.xml
