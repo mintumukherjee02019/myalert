@@ -2899,6 +2899,12 @@ async function unsubscribeSubscription(subscriptionId, mode = "all") {
 }
 
 function render() {
+  const focusedSearchInput = document.activeElement?.matches?.("[data-search-input]")
+    ? {
+        start: document.activeElement.selectionStart,
+        end: document.activeElement.selectionEnd,
+      }
+    : null;
   const path = state.route;
   if (path !== "/done" && successRedirectTimer) {
     window.clearTimeout(successRedirectTimer);
@@ -2938,6 +2944,15 @@ function render() {
   document.getElementById("app").innerHTML = html;
   updateSeoMetadata();
   bindEvents();
+  if (focusedSearchInput) {
+    const searchInput = document.querySelector("[data-search-input]");
+    if (searchInput) {
+      searchInput.focus({ preventScroll: true });
+      if (focusedSearchInput.start !== null && focusedSearchInput.end !== null) {
+        searchInput.setSelectionRange(focusedSearchInput.start, focusedSearchInput.end);
+      }
+    }
+  }
   focusPublisherWhatsappFields();
   window.setTimeout(handleScrollLoaders, 80);
 }
