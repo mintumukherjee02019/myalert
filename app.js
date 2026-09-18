@@ -943,7 +943,7 @@ function feedAlertDialog() {
         </div>
         <button class="feed-alert-subscribe" type="button" data-open-whatsapp-consent>
           ${icons.bell}
-          <span>Subscribe Free to get alert from ${escapeHtml(
+          <span>Follow free to get alerts from ${escapeHtml(
             state.alertDetailPublisher?.name || state.publisher?.name || "this publisher"
           )}</span>
         </button>
@@ -1007,7 +1007,7 @@ function homePage() {
             <div class="trust-strip" aria-label="MyAlert benefits">
               <div class="trust-strip-item"><span class="trust-strip-icon">${icons.check}</span><span>No forced<br />app install</span></div>
               <div class="trust-strip-item"><span class="trust-strip-icon">${icons.check}</span><span>No noisy<br />group chats</span></div>
-              <div class="trust-strip-item"><span class="trust-strip-icon">${icons.check}</span><span>Easy<br />unsubscribe</span></div>
+              <div class="trust-strip-item"><span class="trust-strip-icon">${icons.check}</span><span>Easy<br />unfollow</span></div>
               <div class="trust-strip-item"><span class="trust-strip-icon">${icons.check}</span><span>Browser push<br />and WhatsApp choices</span></div>
             </div>
           </div>
@@ -1406,7 +1406,7 @@ function updateSeoMetadata() {
   const isPublisherRoute = Boolean(publisher && (route.startsWith("/p/") || route.startsWith("/code/") || state.query.get("partner") || state.query.get("code")));
   const isAlertRoute = Boolean(alertRoute && publisher);
   const homeTitle = "MyAlert - Free Alerts & Updates from Businesses and Organizations";
-  const homeDescription = "Subscribe to MyAlert to receive updates, offers, announcements and important alerts from businesses, schools, organizations and local services. Choose only the alerts you want.";
+  const homeDescription = "Follow MyAlert to receive updates, offers, announcements and important alerts from businesses, schools, organizations and local services. Choose only the alerts you want.";
   let title = homeTitle;
   let description = homeDescription;
   let canonicalPath = "/";
@@ -1514,7 +1514,7 @@ function publisherPage() {
                 </div>
                 <button class="subscribe-cta" type="button" data-open-whatsapp-consent>
                   ${icons.bell}
-                  <span>Subscribe to receive alerts</span>
+                  <span>Follow to receive alerts</span>
                 </button>
               </div>
               <p class="page-subtitle">${escapeHtml(
@@ -1915,7 +1915,7 @@ function whatsappCard(canContinue, publisherName) {
         }
         <p class="small-text">${
           state.whatsappConsent
-            ? "You can unsubscribe anytime. Your number is used to deliver the alerts you choose and manage your subscription."
+            ? "You can unfollow anytime. Your number is used to deliver the alerts you choose and manage your preferences."
             : "Name and WhatsApp number are not required when WhatsApp consent is unchecked."
         }</p>
       </div>
@@ -2442,8 +2442,8 @@ function myAlertsPage() {
                 : visibleSubscriptions.length
                 ? visibleSubscriptions.map(subscriptionCard).join("")
                 : state.subscriptions.length
-                ? '<div class="empty">No subscriptions match your search.</div>'
-                : '<div class="empty">No subscriptions found for this device or WhatsApp number.</div>'
+                ? '<div class="empty">No followed publishers match your search.</div>'
+                : '<div class="empty">No followed publishers found for this device or WhatsApp number.</div>'
             }
           </div>
           <div class="saved-alerts-section">
@@ -2526,10 +2526,10 @@ function subscriptionCard(item) {
       <div class="subscription-actions">
         <button class="secondary-btn" data-unsubscribe-mode="browser" data-subscription-id="${escapeHtml(item.id)}" ${
     hasBrowserPush && !state.subscriptionActionBusy ? "" : "disabled"
-  }>Unsubscribe Browser Push</button>
+  }>Unfollow Browser Push</button>
         <button class="secondary-btn" data-unsubscribe-mode="whatsapp" data-subscription-id="${escapeHtml(item.id)}" ${
     whatsappOn && !state.subscriptionActionBusy ? "" : "disabled"
-  }>Unsubscribe WhatsApp</button>
+  }>Unfollow WhatsApp</button>
         <button class="secondary-btn danger" data-unsubscribe-mode="all" data-subscription-id="${escapeHtml(item.id)}" ${
     state.subscriptionActionBusy ? "disabled" : ""
   }>Remove All</button>
@@ -2556,7 +2556,7 @@ function historyPage() {
       <section class="section">
         <div class="shell">
           <h1 class="page-title">Alert History</h1>
-          <p class="page-subtitle">When your subscribed publishers send updates, they appear here.</p>
+          <p class="page-subtitle">When publishers you follow send updates, they appear here.</p>
           <div class="filter-panel" style="margin-top: 18px;">
             <div class="field">
               <label>WhatsApp number for lookup</label>
@@ -2626,7 +2626,7 @@ function donePage() {
             <h1>All done</h1>
             <p>${
               state.lastSubscriptionWhatsAppEnabled
-                ? "You are subscribed. Alerts from this publisher will now reach you for the topics you selected."
+                ? "You are following this publisher. Alerts will now reach you for the topics you selected."
                 : "Your alert preferences are saved. WhatsApp alerts are off because you unchecked consent, so this publisher will not send alerts to you on WhatsApp."
             }</p>
             <a class="primary-btn" href="/" data-link>Back to Home</a>
@@ -2730,7 +2730,7 @@ function staticPage(kind) {
       subtitle:
         "Use MyAlert to follow trusted publishers and control exactly which alerts reach you.",
       cards: [
-        ["Subscribe", "Open a publisher page, choose topics, then enable browser notifications, WhatsApp alerts, or both."],
+        ["Follow", "Open a publisher page, choose topics, then enable browser notifications, WhatsApp alerts, or both."],
         ["iPhone", "Add MyAlert to Home Screen from Safari before enabling browser notifications on iOS."],
         ["Private Topics", "If a topic is private, enter the publisher-provided 5 character passcode before subscribing."],
         ["Manage", "Use My Alerts to retrieve saved preferences by device endpoint or WhatsApp number."],
@@ -2755,23 +2755,23 @@ function staticPage(kind) {
         ["Browser Push", "We store your browser push endpoint and keys so selected publishers can send notifications to this device."],
         ["WhatsApp", "When you opt in, we store your name, WhatsApp number, consent time, and selected topics."],
         ["Control", "You can stop browser push from My Alerts or from your browser notification settings."],
-        ["No Spam", "Publishers can notify only subscribers who selected their topics."],
+        ["No Spam", "Publishers can notify only followers who selected their topics."],
       ],
     },
     terms: {
       title: "Terms",
       subtitle:
-        "These terms explain the basic rules for using MyAlert subscriber pages.",
+        "These terms explain the basic rules for using MyAlert publisher pages.",
       cards: [
         ["Chosen Alerts", "You are responsible for selecting the publishers and topics you want to follow."],
         ["Publisher Content", "Alert messages are created by publishers. MyAlert provides the delivery system."],
         ["Availability", "Delivery can depend on browser, device, network, WhatsApp, and notification permission status."],
-        ["Unsubscribe", "You may stop receiving alerts anytime from My Alerts or your browser settings."],
+        ["Unfollow", "You may stop receiving alerts anytime from My Alerts or your browser settings."],
       ],
     },
     contact: {
       title: "Contact",
-      subtitle: "For support, questions, publisher links, or subscription help.",
+      subtitle: "For support, questions, publisher links, or follow preferences.",
       cards: [
         ["Email", "myalert@traeto.in"],
         ["Phone / WhatsApp", "+91 8624089902"],
@@ -2867,7 +2867,7 @@ async function unsubscribeSubscription(subscriptionId, mode = "all") {
   if (state.subscriptionActionBusy) return;
   const subscription = findSubscription(subscriptionId);
   if (!subscription) {
-    showActionDialog("error", "Could not unsubscribe", "This subscription is no longer available on this screen.");
+    showActionDialog("error", "Could not unfollow", "This followed publisher is no longer available on this screen.");
     return;
   }
   state.subscriptionActionBusy = true;
@@ -2890,11 +2890,11 @@ async function unsubscribeSubscription(subscriptionId, mode = "all") {
     }
     await refreshSubscriptionsAfterAction();
     state.subscriptionActionBusy = false;
-    showActionDialog("success", "Unsubscribed", payload.message || "Your alert preference was updated.");
+    showActionDialog("success", "Unfollowed", payload.message || "Your alert preference was updated.");
   } catch (error) {
     state.subscriptionActionBusy = false;
     render();
-    showActionDialog("error", "Could not unsubscribe", error.message || "Please try again.");
+    showActionDialog("error", "Could not unfollow", error.message || "Please try again.");
   }
 }
 
