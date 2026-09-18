@@ -1021,6 +1021,7 @@ function homePage() {
                 <input class="input has-icon" data-search-input placeholder="Search publisher, school, store, media..." value="${escapeHtml(
                   state.search
                 )}" />
+                ${state.search ? `<button class="search-clear-btn" type="button" data-clear-search aria-label="Clear search" title="Clear search">${icons.close}</button>` : ""}
               </label>
               <button class="icon-btn" data-qr title="Scan QR" aria-label="Scan QR">${icons.qr}</button>
             </div>
@@ -2652,7 +2653,10 @@ function searchPage() {
           <div class="filter-panel" style="margin-top: 20px;">
             <div class="field">
               <label>Search publisher, school, store, media...</label>
-              <input class="input" data-search-input value="${escapeHtml(state.search)}" />
+              <div class="search-input-wrap">
+                <input class="input" data-search-input value="${escapeHtml(state.search)}" />
+                ${state.search ? `<button class="search-clear-btn" type="button" data-clear-search aria-label="Clear search" title="Clear search">${icons.close}</button>` : ""}
+              </div>
             </div>
             <div class="chips" style="margin-top: 14px;">
               ${state.filters
@@ -3024,6 +3028,21 @@ function bindEvents() {
     state.publishersLoaded = false;
     window.clearTimeout(searchTimer);
     searchTimer = window.setTimeout(() => fetchPublicPublishers(state.search), 300);
+  });
+  document.querySelectorAll("[data-clear-search]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      state.search = "";
+      state.homeVisiblePublishers = 10;
+      state.publishersLoaded = false;
+      window.clearTimeout(searchTimer);
+      fetchPublicPublishers("").finally(() => {
+        const input = document.querySelector("[data-search-input]");
+        input?.focus({ preventScroll: true });
+        input?.setSelectionRange?.(0, 0);
+      });
+    });
   });
   document.querySelector("[data-my-alerts-search]")?.addEventListener("input", (event) => {
     state.myAlertsSearch = event.target.value;

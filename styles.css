@@ -338,6 +338,10 @@ a {
   position: relative;
 }
 
+.search-input-wrap {
+  position: relative;
+}
+
 .input-wrap svg {
   position: absolute;
   left: 14px;
@@ -362,6 +366,36 @@ a {
 
 .input.has-icon {
   padding-left: 44px;
+  padding-right: 48px;
+}
+
+.search-input-wrap .input {
+  padding-right: 48px;
+}
+
+.search-clear-btn {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
+.search-clear-btn:hover,
+.search-clear-btn:focus-visible {
+  color: var(--ink);
+  background: var(--red-soft);
+  outline: none;
 }
 
 .textarea {
