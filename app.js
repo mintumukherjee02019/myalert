@@ -62,6 +62,13 @@ const state = {
   whatsappUnsubscribeBusy: false,
   whatsappUnsubscribeMessage: "",
   whatsappUnsubscribeCooldownUntil: 0,
+  privateTopicDialogOpen: false,
+  privateTopicDialogSubscriptionId: "",
+  privateTopicDialogTopicId: "",
+  privateTopicDialogTitle: "",
+  privateTopicDialogPasscode: "",
+  privateTopicDialogBusy: false,
+  privateTopicDialogMessage: "",
   actionDialog: null,
   loading: false,
   loadingPublishers: false,
@@ -853,7 +860,7 @@ function footer() {
 }
 
 function appShell(content, active = "") {
-  return `<div class="page">${header(active)}${whatsappPublisherBanner()}<main>${content}</main>${footer()}${qrScannerModal()}${apiRequestSentDialog()}${actionDialog()}${whatsappUnsubscribeDialog()}${feedAlertDialog()}</div>`;
+  return `<div class="page">${header(active)}${whatsappPublisherBanner()}<main>${content}</main>${footer()}${qrScannerModal()}${apiRequestSentDialog()}${actionDialog()}${privateTopicDialog()}${whatsappUnsubscribeDialog()}${feedAlertDialog()}</div>`;
 }
 
 function whatsappPublisherBanner() {
@@ -925,6 +932,27 @@ function actionDialog() {
         <h2 id="action-dialog-title">${escapeHtml(state.actionDialog.title)}</h2>
         <p>${escapeHtml(state.actionDialog.message)}</p>
         <button class="primary-btn" type="button" data-action-dialog-close>OK</button>
+      </section>
+    </div>
+  `;
+}
+
+function privateTopicDialog() {
+  if (!state.privateTopicDialogOpen) return "";
+  return `
+    <div class="modal-backdrop open" data-private-topic-close>
+      <section class="qr-modal action-modal" role="dialog" aria-modal="true" aria-labelledby="private-topic-title">
+        <div class="modal-head">
+          <div>
+            <h2 id="private-topic-title">Enable private topic</h2>
+            <p class="section-subtitle">Enter the private code for ${escapeHtml(state.privateTopicDialogTitle)}.</p>
+          </div>
+          <button class="icon-btn" type="button" data-private-topic-close aria-label="Close">${icons.close}</button>
+        </div>
+        <label class="field-label" for="private-topic-passcode">Private topic code</label>
+        <input class="input" id="private-topic-passcode" data-private-topic-passcode inputmode="text" autocomplete="off" maxlength="5" value="${escapeHtml(state.privateTopicDialogPasscode)}" placeholder="5 letters or numbers" />
+        <button class="primary-btn" type="button" data-verify-private-topic ${state.privateTopicDialogBusy ? "disabled" : ""}>${state.privateTopicDialogBusy ? "Verifying..." : "Verify and enable"}</button>
+        ${state.privateTopicDialogMessage ? `<p class="otp-message">${escapeHtml(state.privateTopicDialogMessage)}</p>` : ""}
       </section>
     </div>
   `;
@@ -1172,7 +1200,9 @@ async function fetchPublisher(identifier) {
     state.publisher = normalizePublisher(payload.partner);
     state.topics = payload.topics || [];
     state.webPush = payload.webPush || { enabled: false, publicKey: "" };
-    state.selectedTopicIds = new Set(state.topics.map((topic) => topic.id));
+    state.selectedTopicIds = new Set(
+      state.topics.filter((topic) => topic.isPrivate !== true).map((topic) => topic.id)
+    );
     state.topicPasscodes = {};
     state.whatsappOpen = true;
     state.whatsappConsent = true;
@@ -2892,11 +2922,52 @@ async function refreshSubscriptionsAfterAction() {
   await fetchPublicSubscriptions();
 }
 
-async function toggleManagedTopic(subscriptionId, topicId, currentlyEnabled) {
+function openPrivateTopicDialog(subscription, topicId) {
+  const topic = (subscription.topics || []).find((item) => item.id === topicId);
+  state.privateTopicDialogOpen = true;
+  state.privateTopicDialogSubscriptionId = subscription.id;
+  state.privateTopicDialogTopicId = topicId;
+  state.privateTopicDialogTitle = topic?.title || "this topic";
+  state.privateTopicDialogPasscode = "";
+  state.privateTopicDialogBusy = false;
+  state.privateTopicDialogMessage = "";
+  render();
+}
+
+function closePrivateTopicDialog() {
+  state.privateTopicDialogOpen = false;
+  state.privateTopicDialogSubscriptionId = "";
+  state.privateTopicDialogTopicId = "";
+  state.privateTopicDialogTitle = "";
+  state.privateTopicDialogPasscode = "";
+  state.privateTopicDialogBusy = false;
+  state.privateTopicDialogMessage = "";
+  render();
+}
+
+async function verifyAndEnablePrivateTopic() {
+  const passcode = state.privateTopicDialogPasscode.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (!/^[A-Z0-9]{5}$/.test(passcode)) {
+    state.privateTopicDialogMessage = "Enter exactly 5 letters or numbers.";
+    render();
+    return;
+  }
+  const subscriptionId = state.privateTopicDialogSubscriptionId;
+  const topicId = state.privateTopicDialogTopicId;
+  closePrivateTopicDialog();
+  await toggleManagedTopic(subscriptionId, topicId, false, passcode);
+}
+
+async function toggleManagedTopic(subscriptionId, topicId, currentlyEnabled, topicPasscode = "") {
   if (state.subscriptionActionBusy) return;
   const subscription = findSubscription(subscriptionId);
   if (!subscription) {
     showActionDialog("error", "Could not update topic", "This subscription is no longer available on this screen.");
+    return;
+  }
+  const topic = (subscription.topics || []).find((item) => item.id === topicId);
+  if (!currentlyEnabled && topic?.isPrivate && !topicPasscode) {
+    openPrivateTopicDialog(subscription, topicId);
     return;
   }
   state.subscriptionActionBusy = true;
@@ -2912,6 +2983,7 @@ async function toggleManagedTopic(subscriptionId, topicId, currentlyEnabled) {
           ...ownership,
           topicId,
           enabled: !currentlyEnabled,
+          ...(topicPasscode ? { topicPasscode } : {}),
         }),
       }
     );
@@ -3389,6 +3461,23 @@ function bindEvents() {
       ).catch((error) =>
         showActionDialog("error", "Could not update topic", error.message || "Please try again.")
       );
+    });
+  });
+  document.querySelectorAll("[data-private-topic-close]").forEach((element) => {
+    element.addEventListener("click", (event) => {
+      if (element.matches(".modal-backdrop") && event.target !== element) return;
+      closePrivateTopicDialog();
+    });
+  });
+  document.querySelector("[data-private-topic-passcode]")?.addEventListener("input", (event) => {
+    event.target.value = event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 5);
+    state.privateTopicDialogPasscode = event.target.value;
+  });
+  document.querySelector("[data-verify-private-topic]")?.addEventListener("click", () => {
+    verifyAndEnablePrivateTopic().catch((error) => {
+      state.privateTopicDialogMessage = error.message || "Could not enable the private topic.";
+      state.privateTopicDialogBusy = false;
+      render();
     });
   });
   document.querySelectorAll("[data-unsubscribe-mode]").forEach((button) => {
