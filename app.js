@@ -2495,6 +2495,8 @@ function subscriptionCard(item) {
   const publisher = normalizePublisher(item.partner || {});
   const whatsappOn = item.whatsappOptIn?.enabled === true;
   const hasBrowserPush = item.hasBrowserPush === true;
+  const hasActiveTopics = (item.topics || []).some((topic) => topic.enabled !== false);
+  const hasAnythingToRemove = whatsappOn || hasBrowserPush || hasActiveTopics;
   return `
     <article class="publisher-card subscription-card">
       <div class="publisher-top">
@@ -2525,15 +2527,27 @@ function subscriptionCard(item) {
           .join("")}
       </div>
       <div class="subscription-actions">
-        <button class="secondary-btn" data-unsubscribe-mode="browser" data-subscription-id="${escapeHtml(item.id)}" ${
-    hasBrowserPush && !state.subscriptionActionBusy ? "" : "disabled"
-  }>Unfollow Browser Push</button>
-        <button class="secondary-btn" data-unsubscribe-mode="whatsapp" data-subscription-id="${escapeHtml(item.id)}" ${
-    whatsappOn && !state.subscriptionActionBusy ? "" : "disabled"
-  }>Unfollow WhatsApp</button>
-        <button class="secondary-btn danger" data-unsubscribe-mode="all" data-subscription-id="${escapeHtml(item.id)}" ${
-    state.subscriptionActionBusy ? "disabled" : ""
-  }>Remove All</button>
+        ${
+          hasBrowserPush
+            ? `<button class="secondary-btn" data-unsubscribe-mode="browser" data-subscription-id="${escapeHtml(item.id)}" ${
+                state.subscriptionActionBusy ? "disabled" : ""
+              }>Unfollow Browser Push</button>`
+            : ""
+        }
+        ${
+          whatsappOn
+            ? `<button class="secondary-btn" data-unsubscribe-mode="whatsapp" data-subscription-id="${escapeHtml(item.id)}" ${
+                state.subscriptionActionBusy ? "disabled" : ""
+              }>Unfollow WhatsApp</button>`
+            : ""
+        }
+        ${
+          hasAnythingToRemove
+            ? `<button class="secondary-btn danger" data-unsubscribe-mode="all" data-subscription-id="${escapeHtml(item.id)}" ${
+                state.subscriptionActionBusy ? "disabled" : ""
+              }>Remove All</button>`
+            : ""
+        }
       </div>
     </article>
   `;
