@@ -53,6 +53,15 @@ const state = {
   apiRequestError: "",
   apiRequestRedirectUntil: 0,
   subscriptionActionBusy: false,
+  whatsappUnsubscribeOpen: false,
+  whatsappUnsubscribeSubscriptionId: "",
+  whatsappUnsubscribeMode: "",
+  whatsappUnsubscribePhone: "",
+  whatsappUnsubscribeOtp: "",
+  whatsappUnsubscribeOtpSent: false,
+  whatsappUnsubscribeBusy: false,
+  whatsappUnsubscribeMessage: "",
+  whatsappUnsubscribeCooldownUntil: 0,
   actionDialog: null,
   loading: false,
   loadingPublishers: false,
@@ -81,6 +90,7 @@ let successRedirectTimer = 0;
 let successCountdownTimer = 0;
 let apiRequestRedirectTimer = 0;
 let apiRequestCountdownTimer = 0;
+let whatsappUnsubscribeCooldownTimer = 0;
 
 const icons = {
   bell:
@@ -843,7 +853,7 @@ function footer() {
 }
 
 function appShell(content, active = "") {
-  return `<div class="page">${header(active)}${whatsappPublisherBanner()}<main>${content}</main>${footer()}${qrScannerModal()}${apiRequestSentDialog()}${actionDialog()}${feedAlertDialog()}</div>`;
+  return `<div class="page">${header(active)}${whatsappPublisherBanner()}<main>${content}</main>${footer()}${qrScannerModal()}${apiRequestSentDialog()}${actionDialog()}${whatsappUnsubscribeDialog()}${feedAlertDialog()}</div>`;
 }
 
 function whatsappPublisherBanner() {
@@ -915,6 +925,40 @@ function actionDialog() {
         <h2 id="action-dialog-title">${escapeHtml(state.actionDialog.title)}</h2>
         <p>${escapeHtml(state.actionDialog.message)}</p>
         <button class="primary-btn" type="button" data-action-dialog-close>OK</button>
+      </section>
+    </div>
+  `;
+}
+
+function whatsappUnsubscribeDialog() {
+  if (!state.whatsappUnsubscribeOpen) return "";
+  const cooldownSeconds = Math.max(
+    0,
+    Math.ceil((state.whatsappUnsubscribeCooldownUntil - Date.now()) / 1000)
+  );
+  return `
+    <div class="modal-backdrop open" data-whatsapp-unsubscribe-close>
+      <section class="qr-modal action-modal" role="dialog" aria-modal="true" aria-labelledby="whatsapp-unsubscribe-title">
+        <div class="modal-head">
+          <div>
+            <h2 id="whatsapp-unsubscribe-title">Verify WhatsApp unsubscribe</h2>
+            <p class="section-subtitle">We will send a one-time code to +91 ${escapeHtml(state.whatsappUnsubscribePhone)}.</p>
+          </div>
+          <button class="icon-btn" type="button" data-whatsapp-unsubscribe-close aria-label="Close">${icons.close}</button>
+        </div>
+        ${
+          state.whatsappUnsubscribeOtpSent
+            ? `<label class="field-label" for="whatsapp-unsubscribe-otp">Enter OTP</label>
+               <input class="input" id="whatsapp-unsubscribe-otp" data-whatsapp-unsubscribe-otp inputmode="numeric" maxlength="8" value="${escapeHtml(state.whatsappUnsubscribeOtp)}" placeholder="Enter OTP" />
+               <button class="primary-btn" type="button" data-verify-whatsapp-unsubscribe ${
+                 state.whatsappUnsubscribeBusy ? "disabled" : ""
+               }>${state.whatsappUnsubscribeBusy ? "Verifying..." : "Verify and unfollow"}</button>
+               <button class="ghost-btn" type="button" data-request-whatsapp-unsubscribe-otp ${
+                 state.whatsappUnsubscribeBusy || cooldownSeconds > 0 ? "disabled" : ""
+               }>${cooldownSeconds > 0 ? `Resend in ${cooldownSeconds}s` : "Resend OTP"}</button>`
+            : `<button class="primary-btn" type="button" data-request-whatsapp-unsubscribe-otp ${state.whatsappUnsubscribeBusy ? "disabled" : ""}>${state.whatsappUnsubscribeBusy ? "Sending OTP..." : "Send OTP"}</button>`
+        }
+        ${state.whatsappUnsubscribeMessage ? `<p class="otp-message">${escapeHtml(state.whatsappUnsubscribeMessage)}</p>` : ""}
       </section>
     </div>
   `;
@@ -2881,22 +2925,160 @@ async function toggleManagedTopic(subscriptionId, topicId, currentlyEnabled) {
   }
 }
 
-async function unsubscribeSubscription(subscriptionId, mode = "all") {
+function openWhatsAppUnsubscribeDialog(subscription, mode) {
+  const phoneNumber = normalizePhone(subscription?.phoneNumber || getSavedContact().phoneNumber);
+  if (!phoneNumber) {
+    showActionDialog("error", "WhatsApp number required", "Enter the subscribed WhatsApp number before unsubscribing.");
+    return;
+  }
+  state.whatsappUnsubscribeOpen = true;
+  state.whatsappUnsubscribeSubscriptionId = subscription.id;
+  state.whatsappUnsubscribeMode = mode;
+  state.whatsappUnsubscribePhone = phoneNumber;
+  state.whatsappUnsubscribeOtp = "";
+  state.whatsappUnsubscribeOtpSent = false;
+  state.whatsappUnsubscribeBusy = false;
+  state.whatsappUnsubscribeMessage = "";
+  state.whatsappUnsubscribeCooldownUntil = 0;
+  render();
+  requestWhatsAppUnsubscribeOtp().catch((error) => {
+    state.whatsappUnsubscribeMessage = error.message || "Could not send OTP.";
+    state.whatsappUnsubscribeBusy = false;
+    render();
+  });
+}
+
+function closeWhatsAppUnsubscribeDialog() {
+  state.whatsappUnsubscribeOpen = false;
+  state.whatsappUnsubscribeSubscriptionId = "";
+  state.whatsappUnsubscribeMode = "";
+  state.whatsappUnsubscribePhone = "";
+  state.whatsappUnsubscribeOtp = "";
+  state.whatsappUnsubscribeOtpSent = false;
+  state.whatsappUnsubscribeBusy = false;
+  state.whatsappUnsubscribeMessage = "";
+  state.whatsappUnsubscribeCooldownUntil = 0;
+  window.clearTimeout(whatsappUnsubscribeCooldownTimer);
+  whatsappUnsubscribeCooldownTimer = 0;
+  render();
+}
+
+function setWhatsAppUnsubscribeCooldown(seconds) {
+  const safeSeconds = Math.max(0, Number(seconds) || 0);
+  state.whatsappUnsubscribeCooldownUntil = Date.now() + safeSeconds * 1000;
+  window.clearTimeout(whatsappUnsubscribeCooldownTimer);
+  if (safeSeconds > 0) {
+    whatsappUnsubscribeCooldownTimer = window.setTimeout(() => {
+      state.whatsappUnsubscribeCooldownUntil = 0;
+      if (state.whatsappUnsubscribeOpen) render();
+    }, safeSeconds * 1000 + 50);
+  }
+}
+
+async function requestWhatsAppUnsubscribeOtp() {
+  if (state.whatsappUnsubscribeBusy) return;
+  const cooldownSeconds = Math.ceil(
+    (state.whatsappUnsubscribeCooldownUntil - Date.now()) / 1000
+  );
+  if (cooldownSeconds > 0) {
+    state.whatsappUnsubscribeMessage = `Please wait ${cooldownSeconds} seconds before requesting another OTP.`;
+    render();
+    return;
+  }
+  state.whatsappUnsubscribeBusy = true;
+  state.whatsappUnsubscribeMessage = "";
+  render();
+  try {
+    const response = await fetch(`${API_BASE}/api/myalert-publisher-notifications/public/whatsapp-unsubscribe-otp/request`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        phoneNumber: state.whatsappUnsubscribePhone,
+        anonymousDeviceId: getDeviceId(),
+      }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (Number(payload.retryAfterSeconds) > 0) {
+      setWhatsAppUnsubscribeCooldown(payload.retryAfterSeconds);
+    }
+    if (!response.ok || payload.success !== true) {
+      state.whatsappUnsubscribeMessage = payload.message || "Please wait before requesting another OTP.";
+      return;
+    }
+    state.whatsappUnsubscribeOtpSent = true;
+    state.whatsappUnsubscribeMessage = "OTP sent. Enter it below to confirm unsubscribe.";
+  } catch (error) {
+    state.whatsappUnsubscribeMessage = error.message || "Could not send OTP.";
+  } finally {
+    state.whatsappUnsubscribeBusy = false;
+    render();
+  }
+}
+
+async function verifyWhatsAppUnsubscribeOtp() {
+  if (state.whatsappUnsubscribeBusy) return;
+  if (state.whatsappUnsubscribeOtp.trim().length < 4) {
+    state.whatsappUnsubscribeMessage = "Enter the OTP sent to your WhatsApp number.";
+    render();
+    return;
+  }
+  state.whatsappUnsubscribeBusy = true;
+  state.whatsappUnsubscribeMessage = "";
+  render();
+  try {
+    const response = await fetch(`${API_BASE}/api/myalert-publisher-notifications/public/whatsapp-unsubscribe-otp/verify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        phoneNumber: state.whatsappUnsubscribePhone,
+        otpCode: state.whatsappUnsubscribeOtp.trim(),
+        anonymousDeviceId: getDeviceId(),
+      }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || payload.success !== true) {
+      state.whatsappUnsubscribeMessage = payload.message || "OTP verification failed.";
+      return;
+    }
+    const subscriptionId = state.whatsappUnsubscribeSubscriptionId;
+    const mode = state.whatsappUnsubscribeMode;
+    closeWhatsAppUnsubscribeDialog();
+    await unsubscribeSubscription(subscriptionId, mode, true);
+  } catch (error) {
+    state.whatsappUnsubscribeMessage = error.message || "OTP verification failed.";
+  } finally {
+    state.whatsappUnsubscribeBusy = false;
+    if (state.whatsappUnsubscribeOpen) render();
+  }
+}
+
+async function unsubscribeSubscription(subscriptionId, mode = "all", skipWhatsAppVerification = false) {
   if (state.subscriptionActionBusy) return;
   const subscription = findSubscription(subscriptionId);
   if (!subscription) {
     showActionDialog("error", "Could not unfollow", "This followed publisher is no longer available on this screen.");
     return;
   }
+  if (
+    !skipWhatsAppVerification &&
+    (mode === "whatsapp" || mode === "all") &&
+    subscription.whatsappOptIn?.enabled === true
+  ) {
+    openWhatsAppUnsubscribeDialog(subscription, mode);
+    return;
+  }
   state.subscriptionActionBusy = true;
   render();
   try {
     const ownership = await getSubscriptionOwnershipPayload();
+    const phoneNumber = normalizePhone(subscription.phoneNumber || ownership.phoneNumber);
     const payload = await fetchJson(`${API_BASE}/api/myalert-publisher-notifications/public/subscriptions`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...ownership,
+        phoneNumber,
+        anonymousDeviceId: getDeviceId(),
         subscriberId: subscriptionId,
         mode,
       }),
@@ -3214,6 +3396,30 @@ function bindEvents() {
       unsubscribeSubscription(button.dataset.subscriptionId, button.dataset.unsubscribeMode).catch((error) =>
         showActionDialog("error", "Could not unsubscribe", error.message || "Please try again.")
       );
+    });
+  });
+  document.querySelectorAll("[data-whatsapp-unsubscribe-close]").forEach((element) => {
+    element.addEventListener("click", (event) => {
+      if (element.matches(".modal-backdrop") && event.target !== element) return;
+      closeWhatsAppUnsubscribeDialog();
+    });
+  });
+  document.querySelector("[data-request-whatsapp-unsubscribe-otp]")?.addEventListener("click", () => {
+    requestWhatsAppUnsubscribeOtp().catch((error) => {
+      state.whatsappUnsubscribeMessage = error.message || "Could not send OTP.";
+      state.whatsappUnsubscribeBusy = false;
+      render();
+    });
+  });
+  document.querySelector("[data-whatsapp-unsubscribe-otp]")?.addEventListener("input", (event) => {
+    event.target.value = event.target.value.replace(/\D/g, "").slice(0, 8);
+    state.whatsappUnsubscribeOtp = event.target.value;
+  });
+  document.querySelector("[data-verify-whatsapp-unsubscribe]")?.addEventListener("click", () => {
+    verifyWhatsAppUnsubscribeOtp().catch((error) => {
+      state.whatsappUnsubscribeMessage = error.message || "OTP verification failed.";
+      state.whatsappUnsubscribeBusy = false;
+      render();
     });
   });
 }
