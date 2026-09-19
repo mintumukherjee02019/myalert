@@ -1341,6 +1341,10 @@ async function hydratePublisherSubscription() {
     const payload = await fetchJson(url.toString());
     const subscription = payload.subscriptions?.[0];
     if (!subscription) return;
+    const activePublicTopicIds = (subscription.topics || [])
+      .filter((topic) => topic.enabled !== false && topic.isPrivate !== true)
+      .map((topic) => topic.id);
+    state.selectedTopicIds = new Set(activePublicTopicIds);
     state.browserEnabled = subscription.hasBrowserPush === true;
     state.whatsappOpen = true;
     state.whatsappConsent = subscription.whatsappOptIn?.enabled === true;
