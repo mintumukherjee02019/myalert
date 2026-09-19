@@ -29,6 +29,12 @@ const state = {
   webPush: { enabled: false, publicKey: "" },
   selectedTopicIds: new Set(),
   topicPasscodes: {},
+  topicPasscodeDialogOpen: false,
+  topicPasscodeDialogTopicId: "",
+  topicPasscodeDialogTitle: "",
+  topicPasscodeDialogValue: "",
+  topicPasscodeDialogMessage: "",
+  topicPasscodeDialogBusy: false,
   browserEnabled: false,
   browserDenied: false,
   publisherFocusPending: false,
@@ -860,7 +866,7 @@ function footer() {
 }
 
 function appShell(content, active = "") {
-  return `<div class="page">${header(active)}${whatsappPublisherBanner()}<main>${content}</main>${footer()}${qrScannerModal()}${apiRequestSentDialog()}${actionDialog()}${privateTopicDialog()}${whatsappUnsubscribeDialog()}${feedAlertDialog()}</div>`;
+  return `<div class="page">${header(active)}${whatsappPublisherBanner()}<main>${content}</main>${footer()}${qrScannerModal()}${apiRequestSentDialog()}${actionDialog()}${privateTopicDialog()}${topicPasscodeDialog()}${whatsappUnsubscribeDialog()}${feedAlertDialog()}</div>`;
 }
 
 function whatsappPublisherBanner() {
@@ -953,6 +959,27 @@ function privateTopicDialog() {
         <input class="input" id="private-topic-passcode" data-private-topic-passcode inputmode="text" autocomplete="off" maxlength="5" value="${escapeHtml(state.privateTopicDialogPasscode)}" placeholder="5 letters or numbers" />
         <button class="primary-btn" type="button" data-verify-private-topic ${state.privateTopicDialogBusy ? "disabled" : ""}>${state.privateTopicDialogBusy ? "Verifying..." : "Verify and enable"}</button>
         ${state.privateTopicDialogMessage ? `<p class="otp-message">${escapeHtml(state.privateTopicDialogMessage)}</p>` : ""}
+      </section>
+    </div>
+  `;
+}
+
+function topicPasscodeDialog() {
+  if (!state.topicPasscodeDialogOpen) return "";
+  return `
+    <div class="modal-backdrop open" data-topic-passcode-close>
+      <section class="qr-modal topic-passcode-modal" role="dialog" aria-modal="true" aria-labelledby="topic-passcode-title">
+        <div class="modal-head">
+          <div>
+            <h2 id="topic-passcode-title">Private topic</h2>
+            <p class="section-subtitle">Enter the code to enable ${escapeHtml(state.topicPasscodeDialogTitle)}.</p>
+          </div>
+          <button class="icon-btn" type="button" data-topic-passcode-close aria-label="Close">${icons.close}</button>
+        </div>
+        <label class="field-label" for="topic-passcode-value">Private topic code</label>
+        <input class="input" id="topic-passcode-value" data-topic-passcode-value inputmode="text" autocomplete="off" maxlength="5" value="${escapeHtml(state.topicPasscodeDialogValue)}" placeholder="5 letters or numbers" />
+        <button class="primary-btn" type="button" data-topic-passcode-submit ${state.topicPasscodeDialogBusy ? "disabled" : ""}>${state.topicPasscodeDialogBusy ? "Checking..." : "Verify and enable"}</button>
+        ${state.topicPasscodeDialogMessage ? `<p class="otp-message error-text">${escapeHtml(state.topicPasscodeDialogMessage)}</p>` : ""}
       </section>
     </div>
   `;
@@ -1869,6 +1896,7 @@ function detailRow(icon, label, value, className = "") {
 
 function topicCard(topic) {
   const selected = state.selectedTopicIds.has(topic.id);
+  const passcodeVerified = topic.isPrivate && selected && Boolean(state.topicPasscodes[topic.id]);
   return `
     <label class="topic-card ${selected ? "selected" : ""}">
       <input type="checkbox" data-topic-id="${escapeHtml(topic.id)}" ${selected ? "checked" : ""} />
@@ -1880,13 +1908,7 @@ function topicCard(topic) {
         ${
           topic.isPrivate
             ? `<span class="private-note">Private topic - passcode required</span>
-               <span class="passcode-row">
-                 <input class="input" data-passcode-for="${escapeHtml(
-                   topic.id
-                 )}" placeholder="Enter 5 character passcode" maxlength="5" value="${escapeHtml(
-                state.topicPasscodes[topic.id] || ""
-              )}" />
-               </span>`
+               ${passcodeVerified ? `<span class="private-verified">${icons.check} Passcode verified</span>` : ""}`
             : ""
         }
       </span>
@@ -2416,6 +2438,71 @@ async function submitApiRequest() {
     state.apiRequestBusy = false;
     render();
     updateApiRequestCountdown();
+  }
+}
+
+function openTopicPasscodeDialog(topic) {
+  state.topicPasscodeDialogOpen = true;
+  state.topicPasscodeDialogTopicId = topic.id;
+  state.topicPasscodeDialogTitle = topic.title || "this topic";
+  state.topicPasscodeDialogValue = "";
+  state.topicPasscodeDialogMessage = "";
+  state.topicPasscodeDialogBusy = false;
+  render();
+  window.setTimeout(() => document.querySelector("[data-topic-passcode-value]")?.focus({ preventScroll: true }), 0);
+}
+
+function closeTopicPasscodeDialog({ keepSelection = false } = {}) {
+  const topicId = state.topicPasscodeDialogTopicId;
+  if (!keepSelection && topicId) {
+    state.selectedTopicIds.delete(topicId);
+    delete state.topicPasscodes[topicId];
+  }
+  state.topicPasscodeDialogOpen = false;
+  state.topicPasscodeDialogTopicId = "";
+  state.topicPasscodeDialogTitle = "";
+  state.topicPasscodeDialogValue = "";
+  state.topicPasscodeDialogMessage = "";
+  state.topicPasscodeDialogBusy = false;
+  render();
+}
+
+async function verifyTopicPasscode() {
+  const topicId = state.topicPasscodeDialogTopicId;
+  const passcode = state.topicPasscodeDialogValue.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (!/^[A-Z0-9]{5}$/.test(passcode)) {
+    state.topicPasscodeDialogMessage = "Enter exactly 5 letters or numbers.";
+    render();
+    return;
+  }
+  state.topicPasscodeDialogBusy = true;
+  state.topicPasscodeDialogMessage = "";
+  render();
+  try {
+    const response = await fetch(
+      `${API_BASE}/api/myalert-publisher-notifications/public/topics/verify-passcodes`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          publicSlug: state.publisher.publicSlug || state.publisher.slug || state.publisher.id,
+          partnerId: state.publisher.id,
+          topicIds: [topicId],
+          topicPasscodes: { [topicId]: passcode },
+        }),
+      }
+    );
+    const payload = await response.json();
+    if (!response.ok || payload.success !== true) {
+      throw new Error(payload.message || "Incorrect private topic passcode.");
+    }
+    state.selectedTopicIds.add(topicId);
+    state.topicPasscodes[topicId] = passcode;
+    closeTopicPasscodeDialog({ keepSelection: true });
+  } catch (error) {
+    state.topicPasscodeDialogBusy = false;
+    state.topicPasscodeDialogMessage = error.message || "Incorrect private topic passcode.";
+    render();
   }
 }
 
@@ -3340,7 +3427,12 @@ function bindEvents() {
   });
   document.querySelector("[data-qr-close]")?.addEventListener("click", closeQrScanner);
   document.querySelector("[data-select-all]")?.addEventListener("click", () => {
-    state.selectedTopicIds = new Set(state.topics.map((topic) => topic.id));
+    state.selectedTopicIds = new Set(
+      state.topics.filter((topic) => topic.isPrivate !== true).map((topic) => topic.id)
+    );
+    state.topicPasscodes = Object.fromEntries(
+      Object.entries(state.topicPasscodes).filter(([topicId]) => state.selectedTopicIds.has(topicId))
+    );
     render();
   });
   document.querySelectorAll("[data-publisher-tab]").forEach((button) => {
@@ -3366,15 +3458,35 @@ function bindEvents() {
   document.querySelectorAll("[data-topic-id]").forEach((input) => {
     if (input.type !== "checkbox") return;
     input.addEventListener("change", () => {
+      const topic = state.topics.find((item) => item.id === input.dataset.topicId);
+      if (input.checked && topic?.isPrivate) {
+        state.selectedTopicIds.add(input.dataset.topicId);
+        openTopicPasscodeDialog(topic);
+        return;
+      }
       if (input.checked) state.selectedTopicIds.add(input.dataset.topicId);
-      else state.selectedTopicIds.delete(input.dataset.topicId);
+      else {
+        state.selectedTopicIds.delete(input.dataset.topicId);
+        delete state.topicPasscodes[input.dataset.topicId];
+      }
       render();
     });
   });
-  document.querySelectorAll("[data-passcode-for]").forEach((input) => {
-    input.addEventListener("input", () => {
-      input.value = input.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 5);
-      state.topicPasscodes[input.dataset.passcodeFor] = input.value;
+  document.querySelectorAll("[data-topic-passcode-close]").forEach((element) => {
+    element.addEventListener("click", (event) => {
+      if (element.matches(".modal-backdrop") && event.target !== element) return;
+      closeTopicPasscodeDialog();
+    });
+  });
+  document.querySelector("[data-topic-passcode-value]")?.addEventListener("input", (event) => {
+    event.target.value = event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 5);
+    state.topicPasscodeDialogValue = event.target.value;
+  });
+  document.querySelector("[data-topic-passcode-submit]")?.addEventListener("click", () => {
+    verifyTopicPasscode().catch((error) => {
+      state.topicPasscodeDialogBusy = false;
+      state.topicPasscodeDialogMessage = error.message || "Incorrect private topic passcode.";
+      render();
     });
   });
   document.querySelector("[data-save-preferences]")?.addEventListener("click", () => {

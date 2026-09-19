@@ -1496,10 +1496,30 @@ a {
   font-weight: 700;
 }
 
+.private-verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 7px;
+  color: #15803d;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.private-verified svg {
+  width: 15px;
+  height: 15px;
+  stroke-width: 3;
+}
+
 .passcode-row {
   display: grid;
   gap: 8px;
   margin-top: 10px;
+}
+
+.topic-passcode-modal {
+  width: min(420px, calc(100vw - 28px));
 }
 
 .delivery-card,
