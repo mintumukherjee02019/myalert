@@ -2583,8 +2583,12 @@ a {
   }
 
   .hero-grid {
-    grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+    grid-template-columns: minmax(0, 1fr);
     align-items: center;
+  }
+
+  .hero-grid > div {
+    width: 100%;
   }
 
   .publisher-grid {
