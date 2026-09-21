@@ -2042,7 +2042,7 @@ function summaryCard(selectedTopics, canContinue) {
         <li><span>Topics</span><strong>${selectedTopics.length || 0}</strong></li>
         <li><span>Delivery</span><strong>${delivery.length ? delivery.join(", ") : "Choose method"}</strong></li>
       </ul>
-      <button class="primary-btn submit-preferences-btn" data-save-preferences ${!canContinue ? "disabled" : ""}>Submit Alert Preferences</button>
+      <button class="primary-btn submit-preferences-btn" data-save-preferences ${!canContinue ? "disabled" : ""}>Follow Updates</button>
       <p class="small-text">${
         state.whatsappConsent
           ? "This will save your WhatsApp consent and enable browser notifications where supported."
@@ -2927,7 +2927,7 @@ function staticPage(kind) {
         ["Open in Safari", "Visit the publisher link in Safari on your iPhone."],
         ["Add to Home Screen", "Tap Share, choose Add to Home Screen, then confirm MyAlert."],
         ["Return to Publisher", "Open MyAlert from the Home Screen and visit the publisher page again."],
-        ["Enable Alerts", "Choose topics and tap Submit Alert Preferences."],
+        ["Enable Alerts", "Choose topics and tap Follow Updates."],
       ],
     },
     privacy: {
